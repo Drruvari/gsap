@@ -1,4 +1,4 @@
-import { createRef, useEffect, useMemo, useRef, useState } from 'react';
+import { createRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
 import { useEditorStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -41,6 +41,8 @@ export function Canvas() {
     h: number;
   } | null>(null);
   const selectionStartRef = useRef<{ x: number; y: number } | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const pendingRef = useRef<(() => void) | null>(null);
   const resizeRef = useRef<{
     id: string;
     dir: 'nw' | 'ne' | 'sw' | 'se';
@@ -74,6 +76,17 @@ export function Canvas() {
     const snapped = Math.round(value / gridSize) * gridSize;
     return snapped;
   };
+
+  const scheduleUpdate = useCallback((fn: () => void) => {
+    pendingRef.current = fn;
+    if (rafRef.current !== null) return;
+    rafRef.current = window.requestAnimationFrame(() => {
+      rafRef.current = null;
+      const run = pendingRef.current;
+      pendingRef.current = null;
+      run?.();
+    });
+  }, []);
 
   const getSmartSnap = (
     x: number,
@@ -256,6 +269,7 @@ export function Canvas() {
     duplicateSelected,
     elementMap,
     isPlaying,
+    scheduleUpdate,
     redo,
     resetElements,
     selectAll,
@@ -576,7 +590,7 @@ export function Canvas() {
                       };
                     })
                     .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
-                  updateElementsLayout(updates, false);
+                  scheduleUpdate(() => updateElementsLayout(updates, false));
                   return;
                 }
 
@@ -586,19 +600,26 @@ export function Canvas() {
                   const snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
                   setGuides({ x: smart.guidesX, y: smart.guidesY });
                   setDragLabel({ id: el.id, x: snappedX, y: snappedY });
-                  updateElementLayout(el.id, { x: snappedX, y: snappedY }, false);
+                  scheduleUpdate(() => updateElementLayout(el.id, { x: snappedX, y: snappedY }, false));
                   return;
                 }
 
                 setGuides({ x: [], y: [] });
                 setDragLabel({ id: el.id, x: data.x, y: data.y });
-                updateElementLayout(
-                  el.id,
-                  { x: applySnap(data.x, false), y: applySnap(data.y, false) },
-                  false,
+                scheduleUpdate(() =>
+                  updateElementLayout(
+                    el.id,
+                    { x: applySnap(data.x, false), y: applySnap(data.y, false) },
+                    false,
+                  ),
                 );
               }}
               onStop={(event, data) => {
+                if (rafRef.current !== null) {
+                  cancelAnimationFrame(rafRef.current);
+                  rafRef.current = null;
+                  pendingRef.current = null;
+                }
                 const snapping = snapEnabled && !event.altKey;
                 if (selectedIds.length > 1 && selectedIds.includes(el.id)) {
                   const start = dragStartRef.current;

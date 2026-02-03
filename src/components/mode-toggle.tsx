@@ -1,7 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Moon01Icon, Sun01Icon } from '@hugeicons/core-free-icons';
 
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button-variants';
 import {
   DropdownMenu,
   DropdownMenuContent,

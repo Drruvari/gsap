@@ -57,7 +57,17 @@ export function EditorPage() {
         </div>
 
         {/* Main Grid */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_340px] xl:grid-cols-[280px_minmax(0,1fr)_360px] gap-3 sm:gap-4">
+        <div
+          className={[
+            "flex-1 min-h-0 grid grid-cols-1 gap-3 sm:gap-4",
+            showLeft && showRight && "lg:grid-cols-[260px_minmax(0,1fr)_340px] xl:grid-cols-[280px_minmax(0,1fr)_360px]",
+            showLeft && !showRight && "lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)]",
+            !showLeft && showRight && "lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]",
+            !showLeft && !showRight && "lg:grid-cols-[minmax(0,1fr)]",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
           {/* Left Sidebar: Inspector */}
           {showLeft && (
             <div className="order-2 lg:order-0 corner-squircle border bg-background/90 overflow-hidden">
