@@ -34,7 +34,12 @@ export function Canvas() {
   const dragStartRef = useRef<Record<string, { x: number; y: number }>>({});
   const [guides, setGuides] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] });
   const [dragLabel, setDragLabel] = useState<{ id: string; x: number; y: number } | null>(null);
-  const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [selectionBox, setSelectionBox] = useState<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null>(null);
   const selectionStartRef = useRef<{ x: number; y: number } | null>(null);
   const resizeRef = useRef<{
     id: string;
@@ -76,7 +81,7 @@ export function Canvas() {
     w: number,
     h: number,
     ignoreId: string,
-    tolerance = 6
+    tolerance = 6,
   ) => {
     let bestDx = tolerance + 1;
     let bestDy = tolerance + 1;
@@ -147,7 +152,9 @@ export function Canvas() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isUndo = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z';
-      const isRedo = (event.metaKey || event.ctrlKey) && (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'));
+      const isRedo =
+        (event.metaKey || event.ctrlKey) &&
+        (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'));
 
       if (isUndo) {
         event.preventDefault();
@@ -287,8 +294,16 @@ export function Canvas() {
       }
 
       const snapping = snapEnabled && !event.altKey;
-      updateElementLayout(id, { x: applySnap(nextX, snapping), y: applySnap(nextY, snapping) }, false);
-      updateElementSize(id, { w: applySnap(nextW, snapping), h: applySnap(nextH, snapping) }, false);
+      updateElementLayout(
+        id,
+        { x: applySnap(nextX, snapping), y: applySnap(nextY, snapping) },
+        false,
+      );
+      updateElementSize(
+        id,
+        { w: applySnap(nextW, snapping), h: applySnap(nextH, snapping) },
+        false,
+      );
     };
 
     const handleMouseUp = (event: MouseEvent) => {
@@ -319,7 +334,11 @@ export function Canvas() {
       }
 
       const snapping = snapEnabled && !event.altKey;
-      updateElementLayout(id, { x: applySnap(nextX, snapping), y: applySnap(nextY, snapping) }, true);
+      updateElementLayout(
+        id,
+        { x: applySnap(nextX, snapping), y: applySnap(nextY, snapping) },
+        true,
+      );
       updateElementSize(id, { w: applySnap(nextW, snapping), h: applySnap(nextH, snapping) }, true);
       resizeRef.current = null;
     };
@@ -362,12 +381,7 @@ export function Canvas() {
         const right = el.layout.x + size.w;
         const top = el.layout.y;
         const bottom = el.layout.y + size.h;
-        return (
-          right >= box.x &&
-          left <= box.x + box.w &&
-          bottom >= box.y &&
-          top <= box.y + box.h
-        );
+        return right >= box.x && left <= box.x + box.w && bottom >= box.y && top <= box.y + box.h;
       });
 
       setSelection(hits.map((el) => el.id));
@@ -385,17 +399,21 @@ export function Canvas() {
   return (
     <div
       className={cn(
-        "relative h-full w-full min-h-[360px] overflow-hidden corner-squircle border border-dashed border-zinc-200/70 dark:border-zinc-800",
-        snapEnabled ? "ring-1 ring-blue-400/15" : "bg-zinc-100/60 dark:bg-zinc-900/50"
+        'relative h-full w-full min-h-[360px] overflow-hidden corner-squircle border border-dashed border-zinc-200/70 dark:border-zinc-800',
+        snapEnabled ? 'ring-1 ring-blue-400/15' : 'bg-zinc-100/60 dark:bg-zinc-900/50',
       )}
-      style={snapEnabled ? {
-        backgroundColor: "var(--background)",
-        backgroundImage:
-          "repeating-linear-gradient(to right, rgba(148,163,184,0.18) 0 1px, transparent 1px 8px), " +
-          "repeating-linear-gradient(to bottom, rgba(148,163,184,0.18) 0 1px, transparent 1px 8px), " +
-          "repeating-linear-gradient(to right, rgba(148,163,184,0.35) 0 1px, transparent 1px 40px), " +
-          "repeating-linear-gradient(to bottom, rgba(148,163,184,0.35) 0 1px, transparent 1px 40px)",
-      } : undefined}
+      style={
+        snapEnabled
+          ? {
+              backgroundColor: 'var(--background)',
+              backgroundImage:
+                'repeating-linear-gradient(to right, rgba(148,163,184,0.18) 0 1px, transparent 1px 8px), ' +
+                'repeating-linear-gradient(to bottom, rgba(148,163,184,0.18) 0 1px, transparent 1px 8px), ' +
+                'repeating-linear-gradient(to right, rgba(148,163,184,0.35) 0 1px, transparent 1px 40px), ' +
+                'repeating-linear-gradient(to bottom, rgba(148,163,184,0.35) 0 1px, transparent 1px 40px)',
+            }
+          : undefined
+      }
     >
       <div
         ref={containerRef}
@@ -415,23 +433,29 @@ export function Canvas() {
         {selectionBox && (
           <div
             className="absolute border border-blue-500/70 bg-blue-500/10 pointer-events-none"
-            style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.w, height: selectionBox.h }}
+            style={{
+              left: selectionBox.x,
+              top: selectionBox.y,
+              width: selectionBox.w,
+              height: selectionBox.h,
+            }}
           />
         )}
-        {selectedIds.length > 1 && (() => {
-          const selectedElements = elements.filter((el) => selectedIds.includes(el.id));
-          if (selectedElements.length === 0) return null;
-          const minX = Math.min(...selectedElements.map((el) => el.layout.x));
-          const minY = Math.min(...selectedElements.map((el) => el.layout.y));
-          const maxX = Math.max(...selectedElements.map((el) => el.layout.x + getSize(el).w));
-          const maxY = Math.max(...selectedElements.map((el) => el.layout.y + getSize(el).h));
-          return (
-            <div
-              className="absolute border border-blue-500/70 pointer-events-none"
-              style={{ left: minX, top: minY, width: maxX - minX, height: maxY - minY }}
-            />
-          );
-        })()}
+        {selectedIds.length > 1 &&
+          (() => {
+            const selectedElements = elements.filter((el) => selectedIds.includes(el.id));
+            if (selectedElements.length === 0) return null;
+            const minX = Math.min(...selectedElements.map((el) => el.layout.x));
+            const minY = Math.min(...selectedElements.map((el) => el.layout.y));
+            const maxX = Math.max(...selectedElements.map((el) => el.layout.x + getSize(el).w));
+            const maxY = Math.max(...selectedElements.map((el) => el.layout.y + getSize(el).h));
+            return (
+              <div
+                className="absolute border border-blue-500/70 pointer-events-none"
+                style={{ left: minX, top: minY, width: maxX - minX, height: maxY - minY }}
+              />
+            );
+          })()}
 
         {guides.x.map((x) => (
           <div
@@ -462,21 +486,37 @@ export function Canvas() {
               <div className="text-sm font-medium text-foreground/80">Canvas Empty</div>
               <div className="text-xs text-muted-foreground">Add elements to start your scene</div>
               <div className="flex items-center justify-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => addElement('box')}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => addElement('box')}
+                >
                   <HugeiconsIcon icon={SquareIcon} size={14} />
                   Box
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => addElement('circle')}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => addElement('circle')}
+                >
                   <HugeiconsIcon icon={CircleIcon} size={14} />
                   Circle
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => addElement('text')}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => addElement('text')}
+                >
                   <HugeiconsIcon icon={TextIcon} size={14} />
                   Text
                 </Button>
               </div>
               <div className="text-[11px] text-muted-foreground">
-                Tip: Hold <span className="font-semibold">Alt</span> to disable snap, <span className="font-semibold">Shift</span> to multi-select
+                Tip: Hold <span className="font-semibold">Alt</span> to disable snap,{' '}
+                <span className="font-semibold">Shift</span> to multi-select
               </div>
             </div>
           </div>
@@ -487,182 +527,205 @@ export function Canvas() {
           const isSelected = selectedIds.includes(el.id);
           const size = getSize(el);
           return (
-          <Draggable
-            key={el.id}
-            nodeRef={nodeRef}
-            cancel="[data-resize-handle]"
-            // Controlled position: links Drag state to Store state
-            position={{ x: el.layout.x, y: el.layout.y }}
-            onStart={(event, data) => {
-              if (!selectedIds.includes(el.id)) return;
-              const start = new Map<string, { x: number; y: number }>();
-              selectedIds.forEach((id) => {
-                const item = elementMap.get(id);
-                if (item) {
-                  start.set(id, { x: item.layout.x, y: item.layout.y });
+            <Draggable
+              key={el.id}
+              nodeRef={nodeRef}
+              cancel="[data-resize-handle]"
+              // Controlled position: links Drag state to Store state
+              position={{ x: el.layout.x, y: el.layout.y }}
+              onStart={(event, data) => {
+                if (!selectedIds.includes(el.id)) return;
+                const start = new Map<string, { x: number; y: number }>();
+                selectedIds.forEach((id) => {
+                  const item = elementMap.get(id);
+                  if (item) {
+                    start.set(id, { x: item.layout.x, y: item.layout.y });
+                  }
+                });
+                dragStartRef.current = Object.fromEntries(start);
+
+                // Ensure the active element aligns with the snapped position immediately
+                const snapping = snapEnabled && !event.altKey;
+                updateElementLayout(
+                  el.id,
+                  { x: applySnap(data.x, snapping), y: applySnap(data.y, snapping) },
+                  false,
+                );
+              }}
+              // Keep store in sync during drag to avoid cursor/element offset
+              onDrag={(event, data) => {
+                const snapping = snapEnabled && !event.altKey;
+                if (selectedIds.length > 1 && selectedIds.includes(el.id)) {
+                  setGuides({ x: [], y: [] });
+                  setDragLabel(null);
+                  const start = dragStartRef.current;
+                  const activeStart = start[el.id];
+                  if (!activeStart) return;
+                  const nextActiveX = applySnap(data.x, snapping);
+                  const nextActiveY = applySnap(data.y, snapping);
+                  const dx = nextActiveX - activeStart.x;
+                  const dy = nextActiveY - activeStart.y;
+                  const updates = selectedIds
+                    .map((id) => {
+                      const item = start[id];
+                      if (!item) return null;
+                      return {
+                        id,
+                        x: applySnap(item.x + dx, snapping),
+                        y: applySnap(item.y + dy, snapping),
+                      };
+                    })
+                    .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
+                  updateElementsLayout(updates, false);
+                  return;
                 }
-              });
-              dragStartRef.current = Object.fromEntries(start);
 
-              // Ensure the active element aligns with the snapped position immediately
-              const snapping = snapEnabled && !event.altKey;
-              updateElementLayout(el.id, { x: applySnap(data.x, snapping), y: applySnap(data.y, snapping) }, false);
-            }}
-            // Keep store in sync during drag to avoid cursor/element offset
-            onDrag={(event, data) => {
-              const snapping = snapEnabled && !event.altKey;
-              if (selectedIds.length > 1 && selectedIds.includes(el.id)) {
+                if (snapping) {
+                  const smart = getSmartSnap(data.x, data.y, size.w, size.h, el.id);
+                  const snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
+                  const snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
+                  setGuides({ x: smart.guidesX, y: smart.guidesY });
+                  setDragLabel({ id: el.id, x: snappedX, y: snappedY });
+                  updateElementLayout(el.id, { x: snappedX, y: snappedY }, false);
+                  return;
+                }
+
                 setGuides({ x: [], y: [] });
-                setDragLabel(null);
-                const start = dragStartRef.current;
-                const activeStart = start[el.id];
-                if (!activeStart) return;
-                const nextActiveX = applySnap(data.x, snapping);
-                const nextActiveY = applySnap(data.y, snapping);
-                const dx = nextActiveX - activeStart.x;
-                const dy = nextActiveY - activeStart.y;
-                const updates = selectedIds
-                  .map((id) => {
-                    const item = start[id];
-                    if (!item) return null;
-                    return { id, x: applySnap(item.x + dx, snapping), y: applySnap(item.y + dy, snapping) };
-                  })
-                  .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
-                updateElementsLayout(updates, false);
-                return;
-              }
+                setDragLabel({ id: el.id, x: data.x, y: data.y });
+                updateElementLayout(
+                  el.id,
+                  { x: applySnap(data.x, false), y: applySnap(data.y, false) },
+                  false,
+                );
+              }}
+              onStop={(event, data) => {
+                const snapping = snapEnabled && !event.altKey;
+                if (selectedIds.length > 1 && selectedIds.includes(el.id)) {
+                  const start = dragStartRef.current;
+                  const activeStart = start[el.id];
+                  if (!activeStart) return;
+                  const nextActiveX = applySnap(data.x, snapping);
+                  const nextActiveY = applySnap(data.y, snapping);
+                  const dx = nextActiveX - activeStart.x;
+                  const dy = nextActiveY - activeStart.y;
+                  const updates = selectedIds
+                    .map((id) => {
+                      const item = start[id];
+                      if (!item) return null;
+                      return {
+                        id,
+                        x: applySnap(item.x + dx, snapping),
+                        y: applySnap(item.y + dy, snapping),
+                      };
+                    })
+                    .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
+                  updateElementsLayout(updates, true);
+                  dragStartRef.current = {};
+                  setGuides({ x: [], y: [] });
+                  setDragLabel(null);
+                  return;
+                }
 
-              if (snapping) {
-                const smart = getSmartSnap(data.x, data.y, size.w, size.h, el.id);
-                const snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
-                const snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
-                setGuides({ x: smart.guidesX, y: smart.guidesY });
-                setDragLabel({ id: el.id, x: snappedX, y: snappedY });
-                updateElementLayout(el.id, { x: snappedX, y: snappedY }, false);
-                return;
-              }
-
-              setGuides({ x: [], y: [] });
-              setDragLabel({ id: el.id, x: data.x, y: data.y });
-              updateElementLayout(el.id, { x: applySnap(data.x, false), y: applySnap(data.y, false) }, false);
-            }}
-            onStop={(event, data) => {
-              const snapping = snapEnabled && !event.altKey;
-              if (selectedIds.length > 1 && selectedIds.includes(el.id)) {
-                const start = dragStartRef.current;
-                const activeStart = start[el.id];
-                if (!activeStart) return;
-                const nextActiveX = applySnap(data.x, snapping);
-                const nextActiveY = applySnap(data.y, snapping);
-                const dx = nextActiveX - activeStart.x;
-                const dy = nextActiveY - activeStart.y;
-                const updates = selectedIds
-                  .map((id) => {
-                    const item = start[id];
-                    if (!item) return null;
-                    return { id, x: applySnap(item.x + dx, snapping), y: applySnap(item.y + dy, snapping) };
-                  })
-                  .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
-                updateElementsLayout(updates, true);
+                if (snapping) {
+                  const smart = getSmartSnap(data.x, data.y, size.w, size.h, el.id);
+                  const snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
+                  const snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
+                  updateElementLayout(el.id, { x: snappedX, y: snappedY }, true);
+                } else {
+                  updateElementLayout(
+                    el.id,
+                    { x: applySnap(data.x, false), y: applySnap(data.y, false) },
+                    true,
+                  );
+                }
                 dragStartRef.current = {};
                 setGuides({ x: [], y: [] });
                 setDragLabel(null);
-                return;
-              }
-
-              if (snapping) {
-                const smart = getSmartSnap(data.x, data.y, size.w, size.h, el.id);
-                const snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
-                const snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
-                updateElementLayout(el.id, { x: snappedX, y: snappedY }, true);
-              } else {
-                updateElementLayout(el.id, { x: applySnap(data.x, false), y: applySnap(data.y, false) }, true);
-              }
-              dragStartRef.current = {};
-              setGuides({ x: [], y: [] });
-              setDragLabel(null);
-            }}
-            disabled={isPlaying} // Lock layout during animation
-            bounds="parent"
-          >
-            <div
-              ref={nodeRef}
-              data-gsap-id={el.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                selectElement(el.id, e.shiftKey);
               }}
-              className={cn(
-                "absolute cursor-grab active:cursor-grabbing transition-shadow duration-150",
-                "hover:shadow-md hover:outline hover:outline-1 hover:outline-blue-400/70",
-                isSelected ? "outline outline-1 outline-blue-500 z-10" : "z-0",
-                isPlaying && "cursor-default"
-              )}
-              style={{ width: size.w, height: size.h }}
+              disabled={isPlaying} // Lock layout during animation
+              bounds="parent"
             >
-              {/* Element Visual Representation */}
-              {el.type === 'box' && (
-                <div className="w-full h-full bg-blue-500 corner-squircle shadow-sm flex items-center justify-center text-white/80 text-sm font-medium">
-                  Box
-                </div>
-              )}
+              <div
+                ref={nodeRef}
+                data-gsap-id={el.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectElement(el.id, e.shiftKey);
+                }}
+                className={cn(
+                  'absolute cursor-grab active:cursor-grabbing transition-shadow duration-150',
+                  'hover:shadow-md hover:outline hover:outline-1 hover:outline-blue-400/70',
+                  isSelected ? 'outline outline-1 outline-blue-500 z-10' : 'z-0',
+                  isPlaying && 'cursor-default',
+                )}
+                style={{ width: size.w, height: size.h }}
+              >
+                {/* Element Visual Representation */}
+                {el.type === 'box' && (
+                  <div className="w-full h-full bg-blue-500 corner-squircle shadow-sm flex items-center justify-center text-white/80 text-sm font-medium">
+                    Box
+                  </div>
+                )}
 
-              {el.type === 'circle' && (
-                <div className="w-full h-full bg-rose-500 rounded-full shadow-sm flex items-center justify-center text-white/80 text-sm font-medium">
-                  Circle
-                </div>
-              )}
+                {el.type === 'circle' && (
+                  <div className="w-full h-full bg-rose-500 rounded-full shadow-sm flex items-center justify-center text-white/80 text-sm font-medium">
+                    Circle
+                  </div>
+                )}
 
-              {el.type === 'text' && (
-                <div className="w-full h-full whitespace-nowrap px-3 py-2 border border-transparent hover:border-zinc-200 corner-squircle flex items-center">
-                  <span className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 leading-none">
-                    Animate Me
-                  </span>
-                </div>
-              )}
+                {el.type === 'text' && (
+                  <div className="w-full h-full whitespace-nowrap px-3 py-2 border border-transparent hover:border-zinc-200 corner-squircle flex items-center">
+                    <span className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 leading-none">
+                      Animate Me
+                    </span>
+                  </div>
+                )}
 
-              {/* Selection Label (only when selected and not playing) */}
-              {isSelected && !isPlaying && (
-                 <Badge variant="secondary" className="absolute -top-8 left-0 pointer-events-none opacity-80">
+                {/* Selection Label (only when selected and not playing) */}
+                {isSelected && !isPlaying && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -top-8 left-0 pointer-events-none opacity-80"
+                  >
                     {el.label}
-                 </Badge>
-              )}
+                  </Badge>
+                )}
 
-              {isSelected && selectedIds.length === 1 && !isPlaying && (
-                <>
-                  {[
-                    { dir: 'nw', className: '-left-1 -top-1 cursor-nwse-resize' },
-                    { dir: 'ne', className: '-right-1 -top-1 cursor-nesw-resize' },
-                    { dir: 'sw', className: '-left-1 -bottom-1 cursor-nesw-resize' },
-                    { dir: 'se', className: '-right-1 -bottom-1 cursor-nwse-resize' },
-                  ].map((handle) => (
-                    <div
-                      key={handle.dir}
-                      className={cn(
-                        "absolute size-2 corner-squircle bg-white border border-blue-500 shadow-sm",
-                        handle.className
-                      )}
-                      data-resize-handle
-                      onMouseDown={(event) => {
-                        event.stopPropagation();
-                        event.preventDefault();
-                        resizeRef.current = {
-                          id: el.id,
-                          dir: handle.dir as 'nw' | 'ne' | 'sw' | 'se',
-                          startX: event.clientX,
-                          startY: event.clientY,
-                          startW: size.w,
-                          startH: size.h,
-                          startLeft: el.layout.x,
-                          startTop: el.layout.y,
-                        };
-                      }}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
-          </Draggable>
+                {isSelected && selectedIds.length === 1 && !isPlaying && (
+                  <>
+                    {[
+                      { dir: 'nw', className: '-left-1 -top-1 cursor-nwse-resize' },
+                      { dir: 'ne', className: '-right-1 -top-1 cursor-nesw-resize' },
+                      { dir: 'sw', className: '-left-1 -bottom-1 cursor-nesw-resize' },
+                      { dir: 'se', className: '-right-1 -bottom-1 cursor-nwse-resize' },
+                    ].map((handle) => (
+                      <div
+                        key={handle.dir}
+                        className={cn(
+                          'absolute size-2 corner-squircle bg-white border border-blue-500 shadow-sm',
+                          handle.className,
+                        )}
+                        data-resize-handle
+                        onMouseDown={(event) => {
+                          event.stopPropagation();
+                          event.preventDefault();
+                          resizeRef.current = {
+                            id: el.id,
+                            dir: handle.dir as 'nw' | 'ne' | 'sw' | 'se',
+                            startX: event.clientX,
+                            startY: event.clientY,
+                            startW: size.w,
+                            startH: size.h,
+                            startLeft: el.layout.x,
+                            startTop: el.layout.y,
+                          };
+                        }}
+                      />
+                    ))}
+                  </>
+                )}
+              </div>
+            </Draggable>
           );
         })}
       </div>

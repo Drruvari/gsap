@@ -3,7 +3,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Delete02Icon, Settings01Icon } from '@hugeicons/core-free-icons';
 import { useRef } from 'react';
@@ -21,7 +27,7 @@ export function Inspector() {
   } = useEditorStore();
   const easePreviewRef = useRef<string | null>(null);
 
-  const selectedElement = elements.find(el => el.id === selectedId);
+  const selectedElement = elements.find((el) => el.id === selectedId);
 
   const handleDeleteSelected = () => {
     selectedIds.forEach((id) => deleteElement(id));
@@ -58,17 +64,33 @@ export function Inspector() {
           <div className="pt-2 space-y-2">
             <div className="text-[11px] font-medium text-foreground/70">Align</div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="xs" onClick={() => alignSelected('left')}>L</Button>
-              <Button variant="outline" size="xs" onClick={() => alignSelected('center')}>C</Button>
-              <Button variant="outline" size="xs" onClick={() => alignSelected('right')}>R</Button>
-              <Button variant="outline" size="xs" onClick={() => alignSelected('top')}>T</Button>
-              <Button variant="outline" size="xs" onClick={() => alignSelected('middle')}>M</Button>
-              <Button variant="outline" size="xs" onClick={() => alignSelected('bottom')}>B</Button>
+              <Button variant="outline" size="xs" onClick={() => alignSelected('left')}>
+                L
+              </Button>
+              <Button variant="outline" size="xs" onClick={() => alignSelected('center')}>
+                C
+              </Button>
+              <Button variant="outline" size="xs" onClick={() => alignSelected('right')}>
+                R
+              </Button>
+              <Button variant="outline" size="xs" onClick={() => alignSelected('top')}>
+                T
+              </Button>
+              <Button variant="outline" size="xs" onClick={() => alignSelected('middle')}>
+                M
+              </Button>
+              <Button variant="outline" size="xs" onClick={() => alignSelected('bottom')}>
+                B
+              </Button>
             </div>
             <div className="text-[11px] font-medium text-foreground/70">Distribute</div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="xs" onClick={() => distributeSelected('x')}>H</Button>
-              <Button variant="outline" size="xs" onClick={() => distributeSelected('y')}>V</Button>
+              <Button variant="outline" size="xs" onClick={() => distributeSelected('x')}>
+                H
+              </Button>
+              <Button variant="outline" size="xs" onClick={() => distributeSelected('y')}>
+                V
+              </Button>
             </div>
           </div>
         </div>
@@ -121,17 +143,16 @@ export function Inspector() {
       <div className="px-4 py-3 border-b flex items-center justify-between bg-background/90">
         <span className="font-semibold text-sm">{selectedElement.label}</span>
         <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-destructive hover:bg-destructive/10"
-            onClick={() => deleteElement(selectedElement.id)}
+          variant="ghost"
+          size="icon-sm"
+          className="text-destructive hover:bg-destructive/10"
+          onClick={() => deleteElement(selectedElement.id)}
         >
-            <HugeiconsIcon icon={Delete02Icon} size={16} />
+          <HugeiconsIcon icon={Delete02Icon} size={16} />
         </Button>
       </div>
 
       <div className="p-4 space-y-6 overflow-y-auto flex-1">
-
         {/* Transform Section */}
         <div className="space-y-4">
           <div className="space-y-1.5">
@@ -147,13 +168,17 @@ export function Inspector() {
               </SelectTrigger>
               <SelectContent>
                 {Object.keys(ANIMATION_PRESETS).map((name) => (
-                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Transform Target</h4>
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Transform Target
+          </h4>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -211,7 +236,9 @@ export function Inspector() {
 
         {/* Timing Section */}
         <div className="space-y-4">
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Timing & Easing</h4>
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Timing & Easing
+          </h4>
 
           <div className="space-y-1.5">
             <Label className="text-xs">Duration (s)</Label>
@@ -238,23 +265,23 @@ export function Inspector() {
           <div className="space-y-1.5">
             <Label className="text-xs">Ease</Label>
             <Select
-                value={animation.ease ?? undefined}
-                onValueChange={(val) => {
-                  easePreviewRef.current = null;
-                  updateElementAnimation(selectedElement.id, { ease: val ?? undefined });
-                }}
+              value={animation.ease ?? undefined}
+              onValueChange={(val) => {
+                easePreviewRef.current = null;
+                updateElementAnimation(selectedElement.id, { ease: val ?? undefined });
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {[
-                  { value: "none", label: "Linear (none)" },
-                  { value: "power1.out", label: "Power1 Out" },
-                  { value: "power2.out", label: "Power2 Out (Default)" },
-                  { value: "bounce.out", label: "Bounce" },
-                  { value: "elastic.out", label: "Elastic" },
-                  { value: "back.out", label: "Back Out" },
+                  { value: 'none', label: 'Linear (none)' },
+                  { value: 'power1.out', label: 'Power1 Out' },
+                  { value: 'power2.out', label: 'Power2 Out (Default)' },
+                  { value: 'bounce.out', label: 'Bounce' },
+                  { value: 'elastic.out', label: 'Elastic' },
+                  { value: 'back.out', label: 'Back Out' },
                 ].map((item) => (
                   <SelectItem
                     key={item.value}
@@ -267,7 +294,9 @@ export function Inspector() {
                     }}
                     onMouseLeave={() => {
                       if (easePreviewRef.current !== null) {
-                        updateElementAnimation(selectedElement.id, { ease: easePreviewRef.current });
+                        updateElementAnimation(selectedElement.id, {
+                          ease: easePreviewRef.current,
+                        });
                       }
                     }}
                   >

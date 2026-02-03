@@ -3,15 +3,8 @@ import gsap from 'gsap';
 import { useEditorStore } from '@/lib/store';
 
 export function usePlayback() {
-  const {
-    isPlaying,
-    elements,
-    currentTime,
-    stagger,
-    setIsPlaying,
-    setCurrentTime,
-    setDuration,
-  } = useEditorStore();
+  const { isPlaying, elements, currentTime, stagger, setIsPlaying, setCurrentTime, setDuration } =
+    useEditorStore();
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const wasPlayingRef = useRef(false);
   const currentTimeRef = useRef(currentTime);
@@ -37,16 +30,20 @@ export function usePlayback() {
 
     elements.forEach((el, index) => {
       const target = `[data-gsap-id='${el.id}']`;
-      tl.to(target, {
-        x: el.animation.x,
-        y: el.animation.y,
-        rotation: el.animation.rotation,
-        scale: el.animation.scale,
-        opacity: el.animation.opacity,
-        duration: el.animation.duration,
-        delay: el.animation.delay,
-        ease: el.animation.ease,
-      }, index * stagger);
+      tl.to(
+        target,
+        {
+          x: el.animation.x,
+          y: el.animation.y,
+          rotation: el.animation.rotation,
+          scale: el.animation.scale,
+          opacity: el.animation.opacity,
+          duration: el.animation.duration,
+          delay: el.animation.delay,
+          ease: el.animation.ease,
+        },
+        index * stagger,
+      );
     });
 
     timelineRef.current = tl;
@@ -77,7 +74,7 @@ export function usePlayback() {
       // Reset elements back to their layout (clear transform/opacity props)
       elements.forEach((el) => {
         const target = `[data-gsap-id='${el.id}']`;
-        gsap.set(target, { clearProps: "all" });
+        gsap.set(target, { clearProps: 'all' });
       });
     } else {
       // Scrub when not playing

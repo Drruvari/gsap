@@ -2,13 +2,7 @@ import { useEditorStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { HugeiconsIcon } from '@hugeicons/react';
-import {
-    PlayIcon,
-    StopIcon,
-    SquareIcon,
-    CircleIcon,
-    TextIcon
-} from '@hugeicons/core-free-icons';
+import { PlayIcon, StopIcon, SquareIcon, CircleIcon, TextIcon } from '@hugeicons/core-free-icons';
 
 export function Timeline() {
   const {
@@ -32,7 +26,6 @@ export function Timeline() {
 
   return (
     <div className="h-16 bg-background/90 flex items-center px-3 sm:px-4 justify-between gap-3 corner-squircle">
-
       {/* Playback Controls */}
       <div className="flex items-center gap-3">
         <Button
@@ -52,12 +45,12 @@ export function Timeline() {
           Redo
         </Button>
         <Button
-            variant={isPlaying ? "destructive" : "default"}
-            size="icon"
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="rounded-full"
+          variant={isPlaying ? 'destructive' : 'default'}
+          size="icon"
+          onClick={() => setIsPlaying(!isPlaying)}
+          className="rounded-full"
         >
-            <HugeiconsIcon icon={isPlaying ? StopIcon : PlayIcon} fill="currentColor" />
+          <HugeiconsIcon icon={isPlaying ? StopIcon : PlayIcon} fill="currentColor" />
         </Button>
         <Button
           variant="outline"
@@ -71,7 +64,7 @@ export function Timeline() {
           Reset
         </Button>
         <div className="text-xs text-muted-foreground ml-2">
-            {isPlaying ? "Previewing..." : "Ready"}
+          {isPlaying ? 'Previewing...' : 'Ready'}
         </div>
       </div>
 
@@ -109,7 +102,7 @@ export function Timeline() {
       {/* Add Elements */}
       <div className="flex items-center gap-2">
         <Button
-          variant={snapEnabled ? "secondary" : "outline"}
+          variant={snapEnabled ? 'secondary' : 'outline'}
           size="sm"
           className="gap-2"
           onClick={() => toggleSnap()}
@@ -118,16 +111,16 @@ export function Timeline() {
         </Button>
         <span className="text-xs font-medium text-muted-foreground mr-2">Add:</span>
         <Button variant="outline" size="sm" className="gap-2" onClick={() => addElement('box')}>
-            <HugeiconsIcon icon={SquareIcon} size={16} />
-            Box
+          <HugeiconsIcon icon={SquareIcon} size={16} />
+          Box
         </Button>
         <Button variant="outline" size="sm" className="gap-2" onClick={() => addElement('circle')}>
-            <HugeiconsIcon icon={CircleIcon} size={16} />
-            Circle
+          <HugeiconsIcon icon={CircleIcon} size={16} />
+          Circle
         </Button>
         <Button variant="outline" size="sm" className="gap-2" onClick={() => addElement('text')}>
-            <HugeiconsIcon icon={TextIcon} size={16} />
-            Text
+          <HugeiconsIcon icon={TextIcon} size={16} />
+          Text
         </Button>
       </div>
     </div>

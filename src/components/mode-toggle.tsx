@@ -1,23 +1,23 @@
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Moon01Icon, Sun01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Moon01Icon, Sun01Icon } from '@hugeicons/core-free-icons';
 
-import { buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useTheme } from "@/components/theme-provider"
-import { cn } from "@/lib/utils"
+} from '@/components/ui/dropdown-menu';
+import { useTheme } from '@/components/theme-provider';
+import { cn } from '@/lib/utils';
 
 export function ModeToggle() {
-  const { setTheme } = useTheme()
+  const { setTheme } = useTheme();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={cn(buttonVariants({ variant: "outline", size: "icon" }), "relative")}
+        className={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'relative')}
       >
         <HugeiconsIcon
           icon={Sun01Icon}
@@ -32,16 +32,10 @@ export function ModeToggle() {
         <span className="sr-only">Toggle theme</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('light')}>Light</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('dark')}>Dark</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('system')}>System</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

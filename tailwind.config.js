@@ -1,5 +1,5 @@
-import cornerShape from "@toolwind/corner-shape"
+import cornerShape from '@toolwind/corner-shape';
 
 export default {
   plugins: [cornerShape],
-}
+};
