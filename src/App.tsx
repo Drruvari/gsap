@@ -1,9 +1,7 @@
+import { EditorPage } from "@/pages/EditorPage";
+
 export function App() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="font-medium">Hello World</div>
-    </div>
-  )
+return <EditorPage />;
 }
 
-export default App
+export default App;
