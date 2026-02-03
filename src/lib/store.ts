@@ -278,10 +278,10 @@ export const useEditorStore = create<EditorState>()(
         set((state) => {
           if (state.selectedIds.length === 0) return state;
           const now = state.elements.length;
-    const clones = state.selectedIds
-      .map((id) => state.elements.find((el) => el.id === id))
-      .filter(Boolean)
-      .map((el, index) => ({
+          const clones = state.selectedIds
+            .map((id) => state.elements.find((el) => el.id === id))
+            .filter(Boolean)
+            .map((el, index) => ({
               ...el!,
               id: crypto.randomUUID(),
               label: `${el!.type} ${now + index + 1}`,

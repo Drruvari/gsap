@@ -600,7 +600,9 @@ export function Canvas() {
                   const snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
                   setGuides({ x: smart.guidesX, y: smart.guidesY });
                   setDragLabel({ id: el.id, x: snappedX, y: snappedY });
-                  scheduleUpdate(() => updateElementLayout(el.id, { x: snappedX, y: snappedY }, false));
+                  scheduleUpdate(() =>
+                    updateElementLayout(el.id, { x: snappedX, y: snappedY }, false),
+                  );
                   return;
                 }
 
