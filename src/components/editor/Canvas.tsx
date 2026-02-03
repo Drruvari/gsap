@@ -30,7 +30,7 @@ export function Canvas() {
     resetElements,
   } = useEditorStore();
   const containerRef = useRef<HTMLDivElement>(null);
-  const dragRefs = useRef<Record<string, React.RefObject<HTMLDivElement>>>({});
+  const dragRefs = useRef<Record<string, React.RefObject<HTMLDivElement | null>>>({});
   const dragStartRef = useRef<Record<string, { x: number; y: number }>>({});
   const [guides, setGuides] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] });
   const [dragLabel, setDragLabel] = useState<{ id: string; x: number; y: number } | null>(null);
