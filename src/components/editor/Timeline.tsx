@@ -87,7 +87,7 @@ export function Timeline() {
             setIsPlaying(false);
             setCurrentTime(Number(e.target.value));
           }}
-          className="w-48"
+          className="w-48 h-2 appearance-none rounded-full bg-muted/60 accent-blue-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:shadow-sm [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-blue-600"
           disabled={!duration}
         />
         <div className="text-xs text-muted-foreground tabular-nums min-w-[72px] text-right">

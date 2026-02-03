@@ -13,7 +13,7 @@ export function EditorPage() {
         {/* Top Bar */}
         <div className="flex items-center justify-between corner-squircle border bg-background/90 px-3 sm:px-4 py-2.5">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 corner-squircle bg-gradient-to-br from-zinc-900 to-zinc-700 dark:from-zinc-100 dark:to-zinc-400" />
+            <div className="h-8 w-8 corner-squircle bg-linear-to-br from-zinc-900 to-zinc-700 dark:from-zinc-100 dark:to-zinc-400" />
             <div>
               <div className="text-sm font-semibold tracking-tight">GSAP Animation Editor</div>
               <div className="text-xs text-muted-foreground">Prototype Studio</div>
@@ -35,12 +35,12 @@ export function EditorPage() {
         {/* Main Grid */}
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_340px] xl:grid-cols-[280px_minmax(0,1fr)_360px] gap-3 sm:gap-4">
           {/* Left Sidebar: Inspector */}
-          <div className="order-2 lg:order-none corner-squircle border bg-background/90 overflow-hidden">
+          <div className="order-2 lg:order-0 corner-squircle border bg-background/90 overflow-hidden">
             <Inspector />
           </div>
 
           {/* Center Region: Canvas & Timeline */}
-          <div className="order-1 lg:order-none min-w-0 min-h-0 flex flex-col gap-4">
+          <div className="order-1 lg:order-0 min-w-0 min-h-0 flex flex-col gap-4">
             <div className="flex-1 min-h-0 corner-squircle bg-background/90 p-3 sm:p-4 flex">
               <Canvas />
             </div>
@@ -50,7 +50,7 @@ export function EditorPage() {
           </div>
 
           {/* Right Sidebar: Code Preview */}
-          <div className="order-3 lg:order-none corner-squircle border bg-background/90 overflow-hidden">
+          <div className="order-3 lg:order-0 corner-squircle border bg-background/90 overflow-hidden">
             <CodePreview />
           </div>
         </div>
