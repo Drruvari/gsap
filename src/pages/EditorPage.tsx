@@ -1,13 +1,17 @@
 import { Canvas } from '@/components/editor/Canvas';
 import { Inspector } from '@/components/editor/Inspector';
 import { Timeline } from '@/components/editor/Timeline';
-import { CodePreview } from '@/components/editor/CodePreview';
+import { lazy, Suspense } from 'react';
 import { usePlayback } from '@/hooks/use-playback';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Button } from '@/components/ui/button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { SidebarLeft01Icon, SidebarRight01Icon } from '@hugeicons/core-free-icons';
 import { useState } from 'react';
+
+const CodePreview = lazy(() =>
+  import('@/components/editor/CodePreview').then((m) => ({ default: m.CodePreview })),
+);
 
 export function EditorPage() {
   usePlayback();
@@ -94,7 +98,11 @@ export function EditorPage() {
           {/* Right Sidebar: Code Preview */}
           {showRight && (
             <div className="order-3 lg:order-0 corner-squircle border bg-background/90 overflow-hidden">
-              <CodePreview />
+              <Suspense
+                fallback={<div className="p-4 text-sm text-muted-foreground">Loading code…</div>}
+              >
+                <CodePreview />
+              </Suspense>
             </div>
           )}
         </div>
