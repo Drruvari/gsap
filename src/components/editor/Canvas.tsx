@@ -30,7 +30,6 @@ export function Canvas() {
     resetElements,
   } = useEditorStore();
   const containerRef = useRef<HTMLDivElement>(null);
-  const dragRefs = useRef<Record<string, React.RefObject<HTMLDivElement | null>>>({});
   const dragStartRef = useRef<Record<string, { x: number; y: number }>>({});
   const [guides, setGuides] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] });
   const [dragLabel, setDragLabel] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -41,6 +40,7 @@ export function Canvas() {
     h: number;
   } | null>(null);
   const selectionStartRef = useRef<{ x: number; y: number } | null>(null);
+  const suppressClickRef = useRef(false);
   const rafRef = useRef<number | null>(null);
   const pendingRef = useRef<(() => void) | null>(null);
   const resizeRef = useRef<{
@@ -54,12 +54,9 @@ export function Canvas() {
     startTop: number;
   } | null>(null);
 
-  const getDragRef = (id: string) => {
-    if (!dragRefs.current[id]) {
-      dragRefs.current[id] = createRef<HTMLDivElement>();
-    }
-    return dragRefs.current[id];
-  };
+  const dragRefMap = useMemo(() => {
+    return new Map(elements.map((el) => [el.id, createRef<HTMLDivElement>()]));
+  }, [elements]);
 
   const elementMap = useMemo(() => {
     return new Map(elements.map((el) => [el.id, el]));
@@ -71,11 +68,14 @@ export function Canvas() {
     return { w: 120, h: 120 };
   };
 
-  const applySnap = (value: number, enabled = snapEnabled) => {
-    if (!enabled) return value;
-    const snapped = Math.round(value / gridSize) * gridSize;
-    return snapped;
-  };
+  const applySnap = useCallback(
+    (value: number, enabled = snapEnabled) => {
+      if (!enabled) return value;
+      const snapped = Math.round(value / gridSize) * gridSize;
+      return snapped;
+    },
+    [gridSize, snapEnabled],
+  );
 
   const scheduleUpdate = useCallback((fn: () => void) => {
     pendingRef.current = fn;
@@ -400,6 +400,10 @@ export function Canvas() {
 
       setSelection(hits.map((el) => el.id));
       setSelectionBox(null);
+      suppressClickRef.current = true;
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -413,8 +417,8 @@ export function Canvas() {
   return (
     <div
       className={cn(
-        'relative h-full w-full min-h-[360px] overflow-hidden corner-squircle border border-dashed border-zinc-200/70 dark:border-zinc-800',
-        snapEnabled ? 'ring-1 ring-blue-400/15' : 'bg-zinc-100/60 dark:bg-zinc-900/50',
+        'relative h-full w-full min-h-[360px] overflow-hidden corner-squircle border border-dashed border-border/70',
+        snapEnabled ? 'ring-1 ring-primary/20' : 'bg-muted/30',
       )}
       style={
         snapEnabled
@@ -442,11 +446,14 @@ export function Canvas() {
           setSelectionBox({ x, y, w: 0, h: 0 });
           clearSelection();
         }}
-        onClick={() => clearSelection()}
+        onClick={() => {
+          if (suppressClickRef.current) return;
+          clearSelection();
+        }}
       >
         {selectionBox && (
           <div
-            className="absolute border border-blue-500/70 bg-blue-500/10 pointer-events-none"
+            className="absolute border border-primary/70 bg-primary/10 pointer-events-none"
             style={{
               left: selectionBox.x,
               top: selectionBox.y,
@@ -465,7 +472,7 @@ export function Canvas() {
             const maxY = Math.max(...selectedElements.map((el) => el.layout.y + getSize(el).h));
             return (
               <div
-                className="absolute border border-blue-500/70 pointer-events-none"
+                className="absolute border border-primary/70 pointer-events-none"
                 style={{ left: minX, top: minY, width: maxX - minX, height: maxY - minY }}
               />
             );
@@ -474,28 +481,28 @@ export function Canvas() {
         {guides.x.map((x) => (
           <div
             key={`guide-x-${x}`}
-            className="absolute top-0 bottom-0 w-px bg-blue-400/60 pointer-events-none"
+            className="absolute top-0 bottom-0 w-px bg-primary/40 pointer-events-none"
             style={{ left: x }}
           />
         ))}
         {guides.y.map((y) => (
           <div
             key={`guide-y-${y}`}
-            className="absolute left-0 right-0 h-px bg-blue-400/60 pointer-events-none"
+            className="absolute left-0 right-0 h-px bg-primary/40 pointer-events-none"
             style={{ top: y }}
           />
         ))}
 
         {dragLabel && (
           <div
-            className="absolute text-[10px] px-2 py-1 rounded bg-blue-600 text-white pointer-events-none"
+            className="absolute text-[10px] px-2 py-1 rounded bg-primary text-primary-foreground pointer-events-none shadow-sm"
             style={{ left: dragLabel.x + 8, top: dragLabel.y - 24 }}
           >
             {Math.round(dragLabel.x)}, {Math.round(dragLabel.y)}
           </div>
         )}
         {elements.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-zinc-400 select-none">
+          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground select-none">
             <div className="text-center space-y-3">
               <div className="text-sm font-medium text-foreground/80">Canvas Empty</div>
               <div className="text-xs text-muted-foreground">Add elements to start your scene</div>
@@ -537,7 +544,7 @@ export function Canvas() {
         )}
 
         {elements.map((el) => {
-          const nodeRef = getDragRef(el.id);
+          const nodeRef = dragRefMap.get(el.id) ?? createRef<HTMLDivElement>();
           const isSelected = selectedIds.includes(el.id);
           const size = getSize(el);
           return (
@@ -677,8 +684,8 @@ export function Canvas() {
                 }}
                 className={cn(
                   'absolute cursor-grab active:cursor-grabbing transition-shadow duration-150',
-                  'hover:shadow-md hover:outline hover:outline-1 hover:outline-blue-400/70',
-                  isSelected ? 'outline outline-1 outline-blue-500 z-10' : 'z-0',
+                  'hover:shadow-md hover:outline-1 hover:outline-primary/60',
+                  isSelected ? 'outline-1 outline-primary/80 z-10' : 'z-0',
                   isPlaying && 'cursor-default',
                 )}
                 style={{ width: size.w, height: size.h }}
@@ -698,7 +705,7 @@ export function Canvas() {
 
                 {el.type === 'text' && (
                   <div className="w-full h-full whitespace-nowrap px-3 py-2 border border-transparent hover:border-zinc-200 corner-squircle flex items-center">
-                    <span className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 leading-none">
+                    <span className="text-lg font-semibold text-foreground leading-none">
                       Animate Me
                     </span>
                   </div>

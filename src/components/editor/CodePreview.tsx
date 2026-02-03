@@ -9,9 +9,10 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 export function CodePreview() {
   const { elements } = useEditorStore();
   const [copied, setCopied] = useState(false);
+  const isEmpty = elements.length === 0;
 
   const generateCode = () => {
-    if (elements.length === 0) return '// Add elements to generate code';
+    if (elements.length === 0) return '';
 
     const refs = elements
       .map((el) => `const ${el.type}${el.id.slice(0, 4)}Ref = useRef(null);`)
@@ -69,9 +70,9 @@ ${jsx}
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b flex justify-between items-center bg-background/90">
+      <div className="px-4 py-3 flex justify-between items-center border-b border-border/60 bg-transparent">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide text-blue-600 border-blue-200 bg-blue-50 dark:text-blue-300 dark:border-blue-900/40 dark:bg-blue-950/40">
+          <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary">
             Export
           </span>
           <span className="font-semibold text-sm">React + GSAP</span>
@@ -90,7 +91,7 @@ ${jsx}
           {copied ? 'Copied' : 'Copy'}
         </Button>
       </div>
-      <div className="flex-1 bg-zinc-900/90 p-0 overflow-hidden relative">
+      <div className="flex-1 p-0 overflow-hidden relative">
         <SyntaxHighlighter
           language="tsx"
           style={oneDark}
@@ -112,9 +113,16 @@ ${jsx}
         >
           {generateCode()}
         </SyntaxHighlighter>
+        {isEmpty && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="rounded-full border border-border/60 bg-background/60 px-4 py-2 text-xs font-medium text-foreground/80 backdrop-blur">
+              Add elements to generate code
+            </div>
+          </div>
+        )}
         {copied && (
           <div className="absolute inset-0 flex items-start justify-end p-4 pointer-events-none">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-600 text-white px-3 py-1 text-[11px] shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-3 py-1 text-[11px] shadow-sm">
               <HugeiconsIcon icon={Tick02Icon} size={14} />
               Copied to clipboard
             </div>

@@ -36,7 +36,7 @@ export function Inspector() {
   if (selectedIds.length > 1) {
     return (
       <div className="w-full flex flex-col h-full">
-        <div className="px-4 py-3 border-b flex items-center justify-between bg-background/90">
+        <div className="px-4 py-3 flex items-center justify-between border-b border-border/60 bg-transparent">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 corner-squircle bg-muted flex items-center justify-center">
               <HugeiconsIcon icon={Settings01Icon} size={16} />
@@ -58,7 +58,9 @@ export function Inspector() {
         <div className="p-4 space-y-3 text-xs text-muted-foreground">
           <div>Adjust properties one at a time.</div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-md border px-2 py-1">Shift</span>
+            <span className="inline-flex items-center rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-foreground/80">
+              Shift
+            </span>
             <span>to multi‑select</span>
           </div>
           <div className="pt-2 space-y-2">
@@ -101,7 +103,7 @@ export function Inspector() {
   if (!selectedElement) {
     return (
       <div className="w-full flex flex-col h-full">
-        <div className="px-4 py-3 border-b flex items-center justify-between bg-background/90">
+        <div className="px-4 py-3 flex items-center justify-between border-b border-border/60 bg-transparent">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 corner-squircle bg-muted flex items-center justify-center">
               <HugeiconsIcon icon={Settings01Icon} size={16} />
@@ -116,11 +118,15 @@ export function Inspector() {
           <div className="text-sm">Select an element on the canvas to edit its properties.</div>
           <div className="space-y-2 text-xs">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-md border px-2 py-1">Shift</span>
+              <span className="inline-flex items-center rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-foreground/80">
+                Shift
+              </span>
               <span>multi‑select</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-md border px-2 py-1">Alt</span>
+              <span className="inline-flex items-center rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-foreground/80">
+                Alt
+              </span>
               <span>disable snap while dragging</span>
             </div>
           </div>
@@ -140,7 +146,7 @@ export function Inspector() {
 
   return (
     <div className="w-full flex flex-col h-full">
-      <div className="px-4 py-3 border-b flex items-center justify-between bg-background/90">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-border/60 bg-transparent">
         <span className="font-semibold text-sm">{selectedElement.label}</span>
         <Button
           variant="ghost"

@@ -88,6 +88,21 @@ const defaultSizeFor = (type: ElementType) => {
   return { w: 120, h: 120 };
 };
 
+const buildNextIndexMap = (elements: SceneElement[]) => {
+  const next = new Map<ElementType, number>([
+    ['box', 1],
+    ['circle', 1],
+    ['text', 1],
+  ]);
+  elements.forEach((el) => {
+    const match = new RegExp(`^${el.type}\\s+(\\d+)$`, 'i').exec(el.label);
+    const current = match ? Number(match[1]) : 0;
+    const candidate = Math.max(current + 1, next.get(el.type) ?? 1);
+    next.set(el.type, candidate);
+  });
+  return next;
+};
+
 export const useEditorStore = create<EditorState>()(
   persist(
     (set, _get) => ({
@@ -107,6 +122,7 @@ export const useEditorStore = create<EditorState>()(
         set((state) => {
           const id = crypto.randomUUID();
           const size = defaultSizeFor(type);
+          const nextIndex = buildNextIndexMap(state.elements).get(type) ?? 1;
           return {
             historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
             historyFuture: [],
@@ -115,7 +131,7 @@ export const useEditorStore = create<EditorState>()(
               {
                 id,
                 type,
-                label: `${type} ${state.elements.length + 1}`,
+                label: `${type} ${nextIndex}`,
                 layout: { x: 50, y: 50 },
                 initialLayout: { x: 50, y: 50 },
                 size,
@@ -277,18 +293,23 @@ export const useEditorStore = create<EditorState>()(
       duplicateSelected: () =>
         set((state) => {
           if (state.selectedIds.length === 0) return state;
-          const now = state.elements.length;
+          const nextIndexMap = buildNextIndexMap(state.elements);
           const clones = state.selectedIds
             .map((id) => state.elements.find((el) => el.id === id))
             .filter(Boolean)
-            .map((el, index) => ({
-              ...el!,
-              id: crypto.randomUUID(),
-              label: `${el!.type} ${now + index + 1}`,
-              layout: { x: el!.layout.x + 16, y: el!.layout.y + 16 },
-              initialLayout: { x: el!.initialLayout.x + 16, y: el!.initialLayout.y + 16 },
-              initialSize: { ...el!.size },
-            }));
+            .map((el) => {
+              const type = el!.type;
+              const nextIndex = nextIndexMap.get(type) ?? 1;
+              nextIndexMap.set(type, nextIndex + 1);
+              return {
+                ...el!,
+                id: crypto.randomUUID(),
+                label: `${type} ${nextIndex}`,
+                layout: { x: el!.layout.x + 16, y: el!.layout.y + 16 },
+                initialLayout: { x: el!.initialLayout.x + 16, y: el!.initialLayout.y + 16 },
+                initialSize: { ...el!.size },
+              };
+            });
 
           return {
             historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),

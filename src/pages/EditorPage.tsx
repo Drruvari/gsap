@@ -18,12 +18,12 @@ export function EditorPage() {
   const [showLeft, setShowLeft] = useState(true);
   const [showRight, setShowRight] = useState(true);
   return (
-    <div className="h-screen w-full bg-[radial-gradient(1200px_circle_at_top,rgba(255,255,255,0.9),transparent_60%)] dark:bg-[radial-gradient(1200px_circle_at_top,rgba(24,24,27,0.9),transparent_60%)] text-zinc-900 dark:text-zinc-100 font-sans">
+    <div className="h-screen w-full text-foreground font-sans app-shell">
       <div className="h-full w-full p-3 sm:p-4 lg:p-6 flex flex-col gap-3 sm:gap-4">
         {/* Top Bar */}
-        <div className="flex items-center justify-between corner-squircle border bg-background/90 px-3 sm:px-4 py-2.5">
+        <div className="flex items-center justify-between corner-squircle glass-panel-strong px-4 py-2.5">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 corner-squircle bg-linear-to-br from-zinc-900 to-zinc-700 dark:from-zinc-100 dark:to-zinc-400" />
+            <div className="h-8 w-8 corner-squircle border border-border/60 bg-muted/60 shadow-sm" />
             <div className="flex items-center gap-2">
               <div>
                 <div className="text-sm font-semibold tracking-tight">GSAP Animation Editor</div>
@@ -80,24 +80,24 @@ export function EditorPage() {
         >
           {/* Left Sidebar: Inspector */}
           {showLeft && (
-            <div className="order-2 lg:order-0 corner-squircle border bg-background/90 overflow-hidden">
+            <div className="order-2 lg:order-0 corner-squircle glass-panel overflow-hidden">
               <Inspector />
             </div>
           )}
 
           {/* Center Region: Canvas & Timeline */}
           <div className="order-1 lg:order-0 min-w-0 min-h-0 flex flex-col gap-4">
-            <div className="flex-1 min-h-0 corner-squircle bg-background/90 p-3 sm:p-4 flex">
+            <div className="flex-1 min-h-0 corner-squircle glass-panel p-3 sm:p-4 flex">
               <Canvas />
             </div>
-            <div className="corner-squircle bg-background/90">
+            <div className="corner-squircle glass-panel">
               <Timeline />
             </div>
           </div>
 
           {/* Right Sidebar: Code Preview */}
           {showRight && (
-            <div className="order-3 lg:order-0 corner-squircle border bg-background/90 overflow-hidden">
+            <div className="order-3 lg:order-0 corner-squircle glass-panel overflow-hidden">
               <Suspense
                 fallback={<div className="p-4 text-sm text-muted-foreground">Loading code…</div>}
               >

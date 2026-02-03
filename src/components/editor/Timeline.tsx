@@ -25,7 +25,7 @@ export function Timeline() {
   } = useEditorStore();
 
   return (
-    <div className="h-16 bg-background/90 flex items-center px-3 sm:px-4 justify-between gap-3 corner-squircle">
+    <div className="h-16 flex items-center px-3 sm:px-4 justify-between gap-3">
       {/* Playback Controls */}
       <div className="flex items-center gap-3">
         <Button
@@ -80,7 +80,7 @@ export function Timeline() {
             setIsPlaying(false);
             setCurrentTime(Number(e.target.value));
           }}
-          className="w-48 h-2 appearance-none rounded-full bg-muted/60 accent-blue-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:shadow-sm [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-blue-600"
+          className="w-56 h-3 appearance-none rounded-full bg-muted/60 shadow-inner accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-primary/70 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-primary/70 [&::-moz-range-thumb]:shadow-md"
           disabled={!duration}
         />
         <div className="text-xs text-muted-foreground tabular-nums min-w-[72px] text-right">
