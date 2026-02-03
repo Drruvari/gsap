@@ -51,6 +51,7 @@ export function Inspector() {
             size="icon-sm"
             className="text-destructive hover:bg-destructive/10"
             onClick={handleDeleteSelected}
+            aria-label="Delete selected elements"
           >
             <HugeiconsIcon icon={Delete02Icon} size={16} />
           </Button>
@@ -153,6 +154,7 @@ export function Inspector() {
           size="icon-sm"
           className="text-destructive hover:bg-destructive/10"
           onClick={() => deleteElement(selectedElement.id)}
+          aria-label="Delete selected element"
         >
           <HugeiconsIcon icon={Delete02Icon} size={16} />
         </Button>

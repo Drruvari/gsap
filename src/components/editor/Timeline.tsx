@@ -49,6 +49,7 @@ export function Timeline() {
           size="icon"
           onClick={() => setIsPlaying(!isPlaying)}
           className="rounded-full"
+          aria-label={isPlaying ? 'Stop preview' : 'Play preview'}
         >
           <HugeiconsIcon icon={isPlaying ? StopIcon : PlayIcon} fill="currentColor" />
         </Button>

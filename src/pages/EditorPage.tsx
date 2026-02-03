@@ -34,6 +34,7 @@ export function EditorPage() {
                 size="icon-sm"
                 onClick={() => setShowLeft((prev) => !prev)}
                 title={showLeft ? 'Hide left sidebar' : 'Show left sidebar'}
+                aria-label={showLeft ? 'Hide left sidebar' : 'Show left sidebar'}
               >
                 <HugeiconsIcon icon={SidebarLeft01Icon} size={16} />
               </Button>
@@ -45,6 +46,7 @@ export function EditorPage() {
               size="icon-sm"
               onClick={() => setShowRight((prev) => !prev)}
               title={showRight ? 'Hide right sidebar' : 'Show right sidebar'}
+              aria-label={showRight ? 'Hide right sidebar' : 'Show right sidebar'}
             >
               <HugeiconsIcon icon={SidebarRight01Icon} size={16} />
             </Button>

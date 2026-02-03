@@ -210,8 +210,6 @@ export const useEditorStore = create<EditorState>()(
         set((state) => {
           if (id === null) {
             return {
-              historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
-              historyFuture: [],
               selectedId: null,
               selectedIds: [],
             };
@@ -224,8 +222,6 @@ export const useEditorStore = create<EditorState>()(
               : [...state.selectedIds, id];
 
             return {
-              historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
-              historyFuture: [],
               selectedId: nextSelectedIds.length
                 ? nextSelectedIds[nextSelectedIds.length - 1]
                 : null,
@@ -234,8 +230,6 @@ export const useEditorStore = create<EditorState>()(
           }
 
           return {
-            historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
-            historyFuture: [],
             selectedId: id,
             selectedIds: [id],
           };
@@ -243,8 +237,6 @@ export const useEditorStore = create<EditorState>()(
 
       clearSelection: () =>
         set((state) => ({
-          historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
-          historyFuture: [],
           selectedId: null,
           selectedIds: [],
         })),
@@ -285,8 +277,6 @@ export const useEditorStore = create<EditorState>()(
         })),
       selectAll: () =>
         set((state) => ({
-          historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
-          historyFuture: [],
           selectedIds: state.elements.map((el) => el.id),
           selectedId: state.elements.length ? state.elements[state.elements.length - 1].id : null,
         })),
@@ -321,8 +311,6 @@ export const useEditorStore = create<EditorState>()(
         }),
       setSelection: (ids) =>
         set((state) => ({
-          historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
-          historyFuture: [],
           selectedIds: ids,
           selectedId: ids.length ? ids[ids.length - 1] : null,
         })),

@@ -54,19 +54,48 @@ export function Canvas() {
     startTop: number;
   } | null>(null);
 
+  const elementIdsKey = elements.map((el) => el.id).join('|');
   const dragRefMap = useMemo(() => {
     return new Map(elements.map((el) => [el.id, createRef<HTMLDivElement>()]));
-  }, [elements]);
+  }, [elementIdsKey]);
 
   const elementMap = useMemo(() => {
     return new Map(elements.map((el) => [el.id, el]));
   }, [elements]);
 
-  const getSize = (el: { type?: string; size?: { w: number; h: number } }) => {
+  const getSize = useCallback((el: { type?: string; size?: { w: number; h: number } }) => {
     if (el.size) return el.size;
     if (el.type === 'text') return { w: 220, h: 64 };
     return { w: 120, h: 120 };
-  };
+  }, []);
+
+  const sizeMap = useMemo(() => {
+    const map = new Map<string, { w: number; h: number }>();
+    elements.forEach((el) => map.set(el.id, getSize(el)));
+    return map;
+  }, [elements, getSize]);
+
+  const selectedElements = useMemo(
+    () => elements.filter((el) => selectedIds.includes(el.id)),
+    [elements, selectedIds],
+  );
+
+  const selectionBounds = useMemo(() => {
+    if (selectedElements.length < 2) return null;
+    const minX = Math.min(
+      ...selectedElements.map((el) => el.layout.x),
+    );
+    const minY = Math.min(
+      ...selectedElements.map((el) => el.layout.y),
+    );
+    const maxX = Math.max(
+      ...selectedElements.map((el) => el.layout.x + (sizeMap.get(el.id)?.w ?? getSize(el).w)),
+    );
+    const maxY = Math.max(
+      ...selectedElements.map((el) => el.layout.y + (sizeMap.get(el.id)?.h ?? getSize(el).h)),
+    );
+    return { minX, minY, maxX, maxY };
+  }, [getSize, selectedElements, sizeMap]);
 
   const applySnap = useCallback(
     (value: number, enabled = snapEnabled) => {
@@ -228,7 +257,9 @@ export function Canvas() {
         target?.isContentEditable;
       if (isFormField) return;
 
-      const step = event.shiftKey ? 10 : 1;
+      const snapping = snapEnabled && !event.altKey;
+      const baseStep = snapping ? gridSize : 1;
+      const step = event.shiftKey ? baseStep * 5 : baseStep;
       let dx = 0;
       let dy = 0;
 
@@ -251,13 +282,19 @@ export function Canvas() {
 
       event.preventDefault();
 
-      selectedIds.forEach((id) => {
-        const el = elementMap.get(id);
-        if (!el) return;
-        const nextX = applySnap(el.layout.x + dx, false);
-        const nextY = applySnap(el.layout.y + dy, false);
-        updateElementLayout(id, { x: nextX, y: nextY });
-      });
+      const updates = selectedIds
+        .map((id) => {
+          const el = elementMap.get(id);
+          if (!el) return null;
+          const nextX = applySnap(el.layout.x + dx, snapping);
+          const nextY = applySnap(el.layout.y + dy, snapping);
+          return { id, x: nextX, y: nextY };
+        })
+        .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
+
+      if (updates.length > 0) {
+        updateElementsLayout(updates, true);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -269,14 +306,15 @@ export function Canvas() {
     duplicateSelected,
     elementMap,
     isPlaying,
-    scheduleUpdate,
     redo,
     resetElements,
     selectAll,
     selectedIds,
+    snapEnabled,
+    gridSize,
     toggleSnap,
     undo,
-    updateElementLayout,
+    updateElementsLayout,
   ]);
 
   useEffect(() => {
@@ -451,102 +489,17 @@ export function Canvas() {
           clearSelection();
         }}
       >
-        {selectionBox && (
-          <div
-            className="absolute border border-primary/70 bg-primary/10 pointer-events-none"
-            style={{
-              left: selectionBox.x,
-              top: selectionBox.y,
-              width: selectionBox.w,
-              height: selectionBox.h,
-            }}
-          />
-        )}
-        {selectedIds.length > 1 &&
-          (() => {
-            const selectedElements = elements.filter((el) => selectedIds.includes(el.id));
-            if (selectedElements.length === 0) return null;
-            const minX = Math.min(...selectedElements.map((el) => el.layout.x));
-            const minY = Math.min(...selectedElements.map((el) => el.layout.y));
-            const maxX = Math.max(...selectedElements.map((el) => el.layout.x + getSize(el).w));
-            const maxY = Math.max(...selectedElements.map((el) => el.layout.y + getSize(el).h));
-            return (
-              <div
-                className="absolute border border-primary/70 pointer-events-none"
-                style={{ left: minX, top: minY, width: maxX - minX, height: maxY - minY }}
-              />
-            );
-          })()}
-
-        {guides.x.map((x) => (
-          <div
-            key={`guide-x-${x}`}
-            className="absolute top-0 bottom-0 w-px bg-primary/40 pointer-events-none"
-            style={{ left: x }}
-          />
-        ))}
-        {guides.y.map((y) => (
-          <div
-            key={`guide-y-${y}`}
-            className="absolute left-0 right-0 h-px bg-primary/40 pointer-events-none"
-            style={{ top: y }}
-          />
-        ))}
-
-        {dragLabel && (
-          <div
-            className="absolute text-[10px] px-2 py-1 rounded bg-primary text-primary-foreground pointer-events-none shadow-sm"
-            style={{ left: dragLabel.x + 8, top: dragLabel.y - 24 }}
-          >
-            {Math.round(dragLabel.x)}, {Math.round(dragLabel.y)}
-          </div>
-        )}
-        {elements.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground select-none">
-            <div className="text-center space-y-3">
-              <div className="text-sm font-medium text-foreground/80">Canvas Empty</div>
-              <div className="text-xs text-muted-foreground">Add elements to start your scene</div>
-              <div className="flex items-center justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => addElement('box')}
-                >
-                  <HugeiconsIcon icon={SquareIcon} size={14} />
-                  Box
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => addElement('circle')}
-                >
-                  <HugeiconsIcon icon={CircleIcon} size={14} />
-                  Circle
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => addElement('text')}
-                >
-                  <HugeiconsIcon icon={TextIcon} size={14} />
-                  Text
-                </Button>
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                Tip: Hold <span className="font-semibold">Alt</span> to disable snap,{' '}
-                <span className="font-semibold">Shift</span> to multi-select
-              </div>
-            </div>
-          </div>
-        )}
+        <SelectionBox box={selectionBox} />
+        <MultiSelectBox bounds={selectionBounds} />
+        <CanvasGuides guides={guides} />
+        <DragLabel label={dragLabel} />
+        <EmptyCanvasState isEmpty={elements.length === 0} onAdd={addElement} />
 
         {elements.map((el) => {
-          const nodeRef = dragRefMap.get(el.id) ?? createRef<HTMLDivElement>();
+          const nodeRef = dragRefMap.get(el.id);
+          if (!nodeRef) return null;
           const isSelected = selectedIds.includes(el.id);
-          const size = getSize(el);
+          const size = sizeMap.get(el.id) ?? getSize(el);
           return (
             <Draggable
               key={el.id}
@@ -758,6 +711,104 @@ export function Canvas() {
             </Draggable>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function SelectionBox({ box }: { box: { x: number; y: number; w: number; h: number } | null }) {
+  if (!box) return null;
+  return (
+    <div
+      className="absolute border border-primary/70 bg-primary/10 pointer-events-none"
+      style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
+    />
+  );
+}
+
+function MultiSelectBox({
+  bounds,
+}: {
+  bounds: { minX: number; minY: number; maxX: number; maxY: number } | null;
+}) {
+  if (!bounds) return null;
+  return (
+    <div
+      className="absolute border border-primary/70 pointer-events-none"
+      style={{
+        left: bounds.minX,
+        top: bounds.minY,
+        width: bounds.maxX - bounds.minX,
+        height: bounds.maxY - bounds.minY,
+      }}
+    />
+  );
+}
+
+function CanvasGuides({ guides }: { guides: { x: number[]; y: number[] } }) {
+  return (
+    <>
+      {guides.x.map((x) => (
+        <div
+          key={`guide-x-${x}`}
+          className="absolute top-0 bottom-0 w-px bg-primary/40 pointer-events-none"
+          style={{ left: x }}
+        />
+      ))}
+      {guides.y.map((y) => (
+        <div
+          key={`guide-y-${y}`}
+          className="absolute left-0 right-0 h-px bg-primary/40 pointer-events-none"
+          style={{ top: y }}
+        />
+      ))}
+    </>
+  );
+}
+
+function DragLabel({ label }: { label: { id: string; x: number; y: number } | null }) {
+  if (!label) return null;
+  return (
+    <div
+      className="absolute text-[10px] px-2 py-1 rounded bg-primary text-primary-foreground pointer-events-none shadow-sm"
+      style={{ left: label.x + 8, top: label.y - 24 }}
+    >
+      {Math.round(label.x)}, {Math.round(label.y)}
+    </div>
+  );
+}
+
+function EmptyCanvasState({
+  isEmpty,
+  onAdd,
+}: {
+  isEmpty: boolean;
+  onAdd: (type: 'box' | 'circle' | 'text') => void;
+}) {
+  if (!isEmpty) return null;
+  return (
+    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground select-none">
+      <div className="text-center space-y-3">
+        <div className="text-sm font-medium text-foreground/80">Canvas Empty</div>
+        <div className="text-xs text-muted-foreground">Add elements to start your scene</div>
+        <div className="flex items-center justify-center gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => onAdd('box')}>
+            <HugeiconsIcon icon={SquareIcon} size={14} />
+            Box
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => onAdd('circle')}>
+            <HugeiconsIcon icon={CircleIcon} size={14} />
+            Circle
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => onAdd('text')}>
+            <HugeiconsIcon icon={TextIcon} size={14} />
+            Text
+          </Button>
+        </div>
+        <div className="text-[11px] text-muted-foreground">
+          Tip: Hold <span className="font-semibold">Alt</span> to disable snap,{' '}
+          <span className="font-semibold">Shift</span> to multi-select
+        </div>
       </div>
     </div>
   );
