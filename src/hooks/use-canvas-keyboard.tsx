@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import type { SceneElement } from '@/lib/store';
 
 type UseCanvasKeyboardProps = {
-  applySnap: (value: number, enabled?: boolean) => number;
+  applySnap: (value: number, enabled?: boolean, offset?: number) => number;
+  gridOffset: { x: number; y: number };
   elementMap: Map<string, SceneElement>;
   selectedIds: string[];
   snapEnabled: boolean;
@@ -24,6 +25,7 @@ type UseCanvasKeyboardProps = {
 
 export function useCanvasKeyboard({
   applySnap,
+  gridOffset,
   elementMap,
   selectedIds,
   snapEnabled,
@@ -134,8 +136,8 @@ export function useCanvasKeyboard({
         .map((id) => {
           const el = elementMap.get(id);
           if (!el) return null;
-          const nextX = applySnap(el.layout.x + dx, snapping);
-          const nextY = applySnap(el.layout.y + dy, snapping);
+          const nextX = applySnap(el.layout.x + dx, snapping, gridOffset.x);
+          const nextY = applySnap(el.layout.y + dy, snapping, gridOffset.y);
           return { id, x: nextX, y: nextY };
         })
         .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
@@ -153,6 +155,8 @@ export function useCanvasKeyboard({
     deleteElement,
     duplicateSelected,
     elementMap,
+    gridOffset.x,
+    gridOffset.y,
     gridSize,
     isPlaying,
     redo,

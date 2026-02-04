@@ -11,6 +11,12 @@ export function Timeline() {
     loopEnabled,
     setIsPlaying,
     setLoopEnabled,
+    loopRepeat,
+    loopYoyo,
+    previewSpeed,
+    setLoopRepeat,
+    setLoopYoyo,
+    setPreviewSpeed,
     addElement,
     resetPreview,
     currentTime,
@@ -28,6 +34,12 @@ export function Timeline() {
     elements,
     setElementPresetKey,
     updateElementAnimation,
+    gridOpacity,
+    gridMajorOpacity,
+    setGridOpacity,
+    setGridMajorOpacity,
+    showCenterCrosshair,
+    setShowCenterCrosshair,
   } = useEditorStore();
 
   const itemOffsets = useMemo(
@@ -43,7 +55,7 @@ export function Timeline() {
   );
 
   return (
-    <div className="flex flex-col gap-2 px-3 sm:px-4 py-2">
+    <div className="flex flex-col gap-2 px-3 sm:px-4 py-2.5">
       {/* Row 1: Playback + Playhead */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -78,6 +90,24 @@ export function Timeline() {
             onClick={() => setLoopEnabled(!loopEnabled)}
           >
             Loop
+          </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-muted-foreground">Repeat</span>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={loopRepeat}
+              onChange={(e) => setLoopRepeat(Number(e.target.value))}
+              className="h-7 w-16 text-[11px]"
+            />
+          </div>
+          <Button
+            variant={loopYoyo ? 'secondary' : 'outline'}
+            size="xs"
+            onClick={() => setLoopYoyo(!loopYoyo)}
+          >
+            Yoyo
           </Button>
           <Button
             variant="outline"
@@ -118,6 +148,17 @@ export function Timeline() {
               className="h-8 w-20 text-xs"
             />
           </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Speed</span>
+            <Input
+              type="number"
+              step="0.1"
+              min="0.1"
+              value={previewSpeed}
+              onChange={(e) => setPreviewSpeed(Number(e.target.value))}
+              className="h-8 w-20 text-xs"
+            />
+          </div>
           <div className="text-xs text-muted-foreground min-w-[56px] text-right">
             {isPlaying ? 'Previewing...' : 'Ready'}
           </div>
@@ -153,10 +194,39 @@ export function Timeline() {
             <HugeiconsIcon icon={TextIcon} size={16} />
             Text
           </Button>
+          <div className="flex items-center gap-2 ml-2">
+            <span className="text-[11px] text-muted-foreground">Grid</span>
+            <Input
+              type="number"
+              step="0.05"
+              min="0"
+              max="0.6"
+              value={gridOpacity}
+              onChange={(e) => setGridOpacity(Number(e.target.value))}
+              className="h-7 w-16 text-[11px]"
+            />
+            <span className="text-[11px] text-muted-foreground">Major</span>
+            <Input
+              type="number"
+              step="0.05"
+              min="0"
+              max="0.8"
+              value={gridMajorOpacity}
+              onChange={(e) => setGridMajorOpacity(Number(e.target.value))}
+              className="h-7 w-16 text-[11px]"
+            />
+            <Button
+              variant={showCenterCrosshair ? 'secondary' : 'outline'}
+              size="xs"
+              onClick={() => setShowCenterCrosshair(!showCenterCrosshair)}
+            >
+              Center
+            </Button>
+          </div>
         </div>
         {itemOffsets.length > 0 && (
           <div className="flex items-center gap-2 ml-auto">
-            <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               Offsets
             </div>
             {itemOffsets.map((item) => (

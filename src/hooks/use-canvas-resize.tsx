@@ -14,7 +14,8 @@ type ResizeRef = MutableRefObject<{
 
 type UseCanvasResizeProps = {
   resizeRef: ResizeRef;
-  applySnap: (value: number, enabled?: boolean) => number;
+  applySnap: (value: number, enabled?: boolean, offset?: number) => number;
+  gridOffset: { x: number; y: number };
   snapEnabled: boolean;
   updateElementLayout: (id: string, layout: { x: number; y: number }, commit?: boolean) => void;
   updateElementSize: (id: string, size: { w: number; h: number }, commit?: boolean) => void;
@@ -23,6 +24,7 @@ type UseCanvasResizeProps = {
 export function useCanvasResize({
   resizeRef,
   applySnap,
+  gridOffset,
   snapEnabled,
   updateElementLayout,
   updateElementSize,
@@ -77,7 +79,10 @@ export function useCanvasResize({
       const snapping = snapEnabled && !event.altKey;
       updateElementLayout(
         id,
-        { x: applySnap(nextX, snapping), y: applySnap(nextY, snapping) },
+        {
+          x: applySnap(nextX, snapping, gridOffset.x),
+          y: applySnap(nextY, snapping, gridOffset.y),
+        },
         false,
       );
       updateElementSize(
@@ -136,7 +141,10 @@ export function useCanvasResize({
       const snapping = snapEnabled && !event.altKey;
       updateElementLayout(
         id,
-        { x: applySnap(nextX, snapping), y: applySnap(nextY, snapping) },
+        {
+          x: applySnap(nextX, snapping, gridOffset.x),
+          y: applySnap(nextY, snapping, gridOffset.y),
+        },
         true,
       );
       updateElementSize(id, { w: applySnap(nextW, snapping), h: applySnap(nextH, snapping) }, true);

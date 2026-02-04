@@ -12,14 +12,16 @@ type TopBarProps = {
 
 export function TopBar({ showLeft, showRight, onToggleLeft, onToggleRight }: TopBarProps) {
   return (
-    <div className="corner-squircle glass-panel-strong px-4 py-2.5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="corner-squircle glass-panel-strong px-4 py-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 corner-squircle border border-border/60 bg-muted/60 shadow-sm" />
           <div className="flex items-center gap-2">
             <div className="min-w-0">
               <div className="text-sm font-semibold tracking-tight">GSAP Animation Editor</div>
-              <div className="text-xs text-muted-foreground hidden sm:block">Prototype Studio</div>
+              <div className="text-[11px] text-muted-foreground hidden sm:block">
+                Prototype Studio
+              </div>
             </div>
             <Button
               variant="outline"
@@ -32,7 +34,7 @@ export function TopBar({ showLeft, showRight, onToggleLeft, onToggleRight }: Top
             </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-2">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon-sm"

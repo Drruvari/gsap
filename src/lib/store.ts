@@ -14,6 +14,11 @@ export interface AnimationProps {
   duration: number;
   delay: number;
   ease: string;
+  easeX?: string;
+  easeY?: string;
+  easeRotation?: string;
+  easeScale?: string;
+  easeOpacity?: string;
 }
 
 export interface SceneElement {
@@ -41,11 +46,17 @@ interface EditorState {
   selectedIds: string[];
   isPlaying: boolean;
   loopEnabled: boolean;
+  loopRepeat: number;
+  loopYoyo: boolean;
+  previewSpeed: number;
   currentTime: number;
   duration: number;
   stagger: number;
   previewResetId: number;
   canvasSize: { w: number; h: number };
+  gridOpacity: number;
+  gridMajorOpacity: number;
+  showCenterCrosshair: boolean;
   historyPast: EditorSnapshot[];
   historyFuture: EditorSnapshot[];
 
@@ -69,11 +80,17 @@ interface EditorState {
   deleteElement: (id: string) => void;
   setIsPlaying: (playing: boolean) => void;
   setLoopEnabled: (enabled: boolean) => void;
+  setLoopRepeat: (repeat: number) => void;
+  setLoopYoyo: (enabled: boolean) => void;
+  setPreviewSpeed: (speed: number) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
   setStagger: (stagger: number) => void;
   resetPreview: () => void;
   setCanvasSize: (size: { w: number; h: number }) => void;
+  setGridOpacity: (value: number) => void;
+  setGridMajorOpacity: (value: number) => void;
+  setShowCenterCrosshair: (value: boolean) => void;
   resetElements: () => void;
   snapEnabled: boolean;
   gridSize: number;
@@ -141,13 +158,19 @@ export const useEditorStore = create<EditorState>()(
       selectedIds: [],
       isPlaying: false,
       loopEnabled: false,
+      loopRepeat: 0,
+      loopYoyo: false,
+      previewSpeed: 1,
       currentTime: 0,
       duration: 0,
       stagger: 0,
       previewResetId: 0,
       canvasSize: { w: 0, h: 0 },
+      gridOpacity: 0.1,
+      gridMajorOpacity: 0.2,
+      showCenterCrosshair: true,
       snapEnabled: false,
-      gridSize: 8,
+      gridSize: 12,
       historyPast: [],
       historyFuture: [],
 
@@ -347,6 +370,9 @@ export const useEditorStore = create<EditorState>()(
 
       setIsPlaying: (playing) => set({ isPlaying: playing }),
       setLoopEnabled: (enabled) => set({ loopEnabled: enabled }),
+      setLoopRepeat: (repeat) => set({ loopRepeat: repeat }),
+      setLoopYoyo: (enabled) => set({ loopYoyo: enabled }),
+      setPreviewSpeed: (speed) => set({ previewSpeed: speed }),
       setCurrentTime: (time) => set({ currentTime: time }),
       setDuration: (duration) => set({ duration }),
       setStagger: (stagger) => set({ stagger }),
@@ -357,6 +383,9 @@ export const useEditorStore = create<EditorState>()(
           previewResetId: state.previewResetId + 1,
         })),
       setCanvasSize: (size) => set(() => ({ canvasSize: size })),
+      setGridOpacity: (value) => set(() => ({ gridOpacity: value })),
+      setGridMajorOpacity: (value) => set(() => ({ gridMajorOpacity: value })),
+      setShowCenterCrosshair: (value) => set(() => ({ showCenterCrosshair: value })),
       toggleSnap: () => set((state) => ({ snapEnabled: !state.snapEnabled })),
 
       resetElements: () =>

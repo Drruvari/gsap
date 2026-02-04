@@ -217,6 +217,15 @@ export function Inspector() {
   }
 
   const { animation, layout, size } = selectedElement;
+  const easeOptions = [
+    { value: 'none', label: 'Linear (none)' },
+    { value: 'power1.out', label: 'Power1 Out' },
+    { value: 'power2.out', label: 'Power2 Out (Default)' },
+    { value: 'power3.out', label: 'Power3 Out' },
+    { value: 'bounce.out', label: 'Bounce' },
+    { value: 'elastic.out', label: 'Elastic' },
+    { value: 'back.out', label: 'Back Out' },
+  ];
   const matchesPreset = (preset: Partial<typeof animation>) =>
     Object.entries(preset).every(
       ([key, value]) => animation[key as keyof typeof animation] === value,
@@ -227,6 +236,14 @@ export function Inspector() {
 
   const handleChange = (key: keyof typeof animation, value: string | number) => {
     updateElementAnimation(selectedElement.id, { [key]: Number(value) });
+    if (selectedElement.presetKey) {
+      setElementPresetKey(selectedElement.id, null);
+    }
+  };
+
+  const handleEaseChange = (key: keyof typeof animation, value: string | null) => {
+    const next = value === 'inherit' ? undefined : (value ?? 'none');
+    updateElementAnimation(selectedElement.id, { [key]: next });
     if (selectedElement.presetKey) {
       setElementPresetKey(selectedElement.id, null);
     }
@@ -281,9 +298,9 @@ export function Inspector() {
         </Button>
       </div>
 
-      <div className="p-4 space-y-6 overflow-y-auto flex-1">
+      <div className="p-4 space-y-5 overflow-y-auto flex-1">
         {/* Transform Section */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="space-y-1.5">
             <Label className="text-xs">Preset</Label>
             <Select
@@ -324,7 +341,7 @@ export function Inspector() {
             </div>
           </div>
 
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             Position
           </h4>
 
@@ -347,7 +364,7 @@ export function Inspector() {
             </div>
           </div>
 
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             Animation Offset
           </h4>
 
@@ -406,8 +423,8 @@ export function Inspector() {
         <Separator />
 
         {/* Timing Section */}
-        <div className="space-y-4">
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="space-y-3">
+          <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             Timing & Easing
           </h4>
 
@@ -439,21 +456,14 @@ export function Inspector() {
               value={animation.ease ?? undefined}
               onValueChange={(val) => {
                 easePreviewRef.current = null;
-                updateElementAnimation(selectedElement.id, { ease: val ?? undefined });
+                handleEaseChange('ease', val);
               }}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[
-                  { value: 'none', label: 'Linear (none)' },
-                  { value: 'power1.out', label: 'Power1 Out' },
-                  { value: 'power2.out', label: 'Power2 Out (Default)' },
-                  { value: 'bounce.out', label: 'Bounce' },
-                  { value: 'elastic.out', label: 'Elastic' },
-                  { value: 'back.out', label: 'Back Out' },
-                ].map((item) => (
+                {easeOptions.map((item) => (
                   <SelectItem
                     key={item.value}
                     value={item.value}
@@ -479,14 +489,120 @@ export function Inspector() {
           </div>
         </div>
 
+        <Separator />
+        <div className="space-y-3">
+          <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Per-Property Easing
+          </h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Ease X</Label>
+              <Select
+                value={animation.easeX ?? 'inherit'}
+                onValueChange={(val) => handleEaseChange('easeX', val)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inherit">Use Base Ease</SelectItem>
+                  {easeOptions.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Ease Y</Label>
+              <Select
+                value={animation.easeY ?? 'inherit'}
+                onValueChange={(val) => handleEaseChange('easeY', val)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inherit">Use Base Ease</SelectItem>
+                  {easeOptions.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Ease Rotation</Label>
+              <Select
+                value={animation.easeRotation ?? 'inherit'}
+                onValueChange={(val) => handleEaseChange('easeRotation', val)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inherit">Use Base Ease</SelectItem>
+                  {easeOptions.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Ease Scale</Label>
+              <Select
+                value={animation.easeScale ?? 'inherit'}
+                onValueChange={(val) => handleEaseChange('easeScale', val)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inherit">Use Base Ease</SelectItem>
+                  {easeOptions.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Ease Opacity</Label>
+            <Select
+              value={animation.easeOpacity ?? 'inherit'}
+              onValueChange={(val) => handleEaseChange('easeOpacity', val)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inherit">Use Base Ease</SelectItem>
+                {easeOptions.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {selectedElement.type === 'text' && (
           <>
             <Separator />
-            <div className="space-y-4">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <div className="space-y-3">
+              <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Text
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Font Size</Label>
                   <Input

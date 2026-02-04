@@ -37,6 +37,10 @@ export function Canvas() {
     resetElements,
     setCanvasSize,
     updateElementText,
+    gridOpacity,
+    gridMajorOpacity,
+    showCenterCrosshair,
+    canvasSize,
   } = useEditorStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<Record<string, { x: number; y: number }>>({});
@@ -113,13 +117,32 @@ export function Canvas() {
   }, [getSize, selectedElements, sizeMap]);
 
   const applySnap = useCallback(
-    (value: number, enabled = snapEnabled) => {
+    (value: number, enabled = snapEnabled, offset = 0) => {
       if (!enabled) return value;
-      const snapped = Math.round(value / gridSize) * gridSize;
+      const snapped = Math.round((value - offset) / gridSize) * gridSize + offset;
       return snapped;
     },
     [gridSize, snapEnabled],
   );
+
+  const gridOffset = useMemo(() => {
+    if (canvasSize.w === 0 || canvasSize.h === 0) {
+      return {
+        minorX: 0,
+        minorY: 0,
+        majorX: 0,
+        majorY: 0,
+      };
+    }
+    const minor = gridSize;
+    const major = gridSize * 5;
+    return {
+      minorX: (canvasSize.w / 2) % minor,
+      minorY: (canvasSize.h / 2) % minor,
+      majorX: (canvasSize.w / 2) % major,
+      majorY: (canvasSize.h / 2) % major,
+    };
+  }, [canvasSize.h, canvasSize.w, gridSize]);
 
   const scheduleUpdate = useCallback((fn: () => void) => {
     pendingRef.current = fn;
@@ -225,6 +248,7 @@ export function Canvas() {
 
   useCanvasKeyboard({
     applySnap,
+    gridOffset: { x: gridOffset.minorX, y: gridOffset.minorY },
     elementMap,
     selectedIds,
     snapEnabled,
@@ -245,6 +269,7 @@ export function Canvas() {
     resizeRef,
     applySnap,
     snapEnabled,
+    gridOffset: { x: gridOffset.minorX, y: gridOffset.minorY },
     updateElementLayout,
     updateElementSize,
   });
@@ -285,14 +310,35 @@ export function Canvas() {
           ? {
               backgroundColor: 'var(--background)',
               backgroundImage:
-                'repeating-linear-gradient(to right, rgba(148,163,184,0.18) 0 1px, transparent 1px 8px), ' +
-                'repeating-linear-gradient(to bottom, rgba(148,163,184,0.18) 0 1px, transparent 1px 8px), ' +
-                'repeating-linear-gradient(to right, rgba(148,163,184,0.35) 0 1px, transparent 1px 40px), ' +
-                'repeating-linear-gradient(to bottom, rgba(148,163,184,0.35) 0 1px, transparent 1px 40px)',
+                `repeating-linear-gradient(to right, rgba(148,163,184,${gridOpacity}) 0 1px, transparent 1px ${gridSize}px), ` +
+                `repeating-linear-gradient(to bottom, rgba(148,163,184,${gridOpacity}) 0 1px, transparent 1px ${gridSize}px), ` +
+                `repeating-linear-gradient(to right, rgba(148,163,184,${gridMajorOpacity}) 0 1px, transparent 1px ${gridSize * 5}px), ` +
+                `repeating-linear-gradient(to bottom, rgba(148,163,184,${gridMajorOpacity}) 0 1px, transparent 1px ${gridSize * 5}px)`,
+              backgroundPosition:
+                `${gridOffset.minorX}px ${gridOffset.minorY}px, ` +
+                `${gridOffset.minorX}px ${gridOffset.minorY}px, ` +
+                `${gridOffset.majorX}px ${gridOffset.majorY}px, ` +
+                `${gridOffset.majorX}px ${gridOffset.majorY}px`,
             }
           : undefined
       }
     >
+      {showCenterCrosshair && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div
+            className="absolute left-1/2 top-0 bottom-0 w-px bg-primary/20"
+            style={{ transform: 'translateX(-0.5px)' }}
+          />
+          <div
+            className="absolute top-1/2 left-0 right-0 h-px bg-primary/20"
+            style={{ transform: 'translateY(-0.5px)' }}
+          />
+          <div
+            className="absolute left-1/2 top-1/2 size-2 rounded-full border border-primary/40 bg-primary/10"
+            style={{ transform: 'translate(-50%, -50%)' }}
+          />
+        </div>
+      )}
       <div
         ref={containerRef}
         className="w-full h-full relative"
@@ -344,7 +390,10 @@ export function Canvas() {
                 const snapping = snapEnabled && !event.altKey;
                 updateElementLayout(
                   el.id,
-                  { x: applySnap(data.x, snapping), y: applySnap(data.y, snapping) },
+                  {
+                    x: applySnap(data.x, snapping, gridOffset.minorX),
+                    y: applySnap(data.y, snapping, gridOffset.minorY),
+                  },
                   false,
                 );
               }}
@@ -357,8 +406,8 @@ export function Canvas() {
                   const start = dragStartRef.current;
                   const activeStart = start[el.id];
                   if (!activeStart) return;
-                  const nextActiveX = applySnap(data.x, snapping);
-                  const nextActiveY = applySnap(data.y, snapping);
+                  const nextActiveX = applySnap(data.x, snapping, gridOffset.minorX);
+                  const nextActiveY = applySnap(data.y, snapping, gridOffset.minorY);
                   const rawDx = nextActiveX - activeStart.x;
                   const rawDy = nextActiveY - activeStart.y;
                   const { dx, dy } = applyAxisLock(rawDx, rawDy, event);
@@ -368,8 +417,8 @@ export function Canvas() {
                       if (!item) return null;
                       return {
                         id,
-                        x: applySnap(item.x + dx, snapping),
-                        y: applySnap(item.y + dy, snapping),
+                        x: applySnap(item.x + dx, snapping, gridOffset.minorX),
+                        y: applySnap(item.y + dy, snapping, gridOffset.minorY),
                       };
                     })
                     .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
@@ -379,8 +428,12 @@ export function Canvas() {
 
                 if (snapping) {
                   const smart = getSmartSnap(data.x, data.y, size.w, size.h, el.id);
-                  let snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
-                  let snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
+                  let snappedX = smart.guidesX.length
+                    ? smart.x
+                    : applySnap(data.x, true, gridOffset.minorX);
+                  let snappedY = smart.guidesY.length
+                    ? smart.y
+                    : applySnap(data.y, true, gridOffset.minorY);
                   const { dx, dy } = applyAxisLock(
                     snappedX - el.layout.x,
                     snappedY - el.layout.y,
@@ -418,7 +471,10 @@ export function Canvas() {
                 scheduleUpdate(() =>
                   updateElementLayout(
                     el.id,
-                    { x: applySnap(nextX, false), y: applySnap(nextY, false) },
+                    {
+                      x: applySnap(nextX, false, gridOffset.minorX),
+                      y: applySnap(nextY, false, gridOffset.minorY),
+                    },
                     false,
                   ),
                 );
@@ -434,8 +490,8 @@ export function Canvas() {
                   const start = dragStartRef.current;
                   const activeStart = start[el.id];
                   if (!activeStart) return;
-                  const nextActiveX = applySnap(data.x, snapping);
-                  const nextActiveY = applySnap(data.y, snapping);
+                  const nextActiveX = applySnap(data.x, snapping, gridOffset.minorX);
+                  const nextActiveY = applySnap(data.y, snapping, gridOffset.minorY);
                   const rawDx = nextActiveX - activeStart.x;
                   const rawDy = nextActiveY - activeStart.y;
                   const { dx, dy } = applyAxisLock(rawDx, rawDy, event);
@@ -445,8 +501,8 @@ export function Canvas() {
                       if (!item) return null;
                       return {
                         id,
-                        x: applySnap(item.x + dx, snapping),
-                        y: applySnap(item.y + dy, snapping),
+                        x: applySnap(item.x + dx, snapping, gridOffset.minorX),
+                        y: applySnap(item.y + dy, snapping, gridOffset.minorY),
                       };
                     })
                     .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
@@ -459,8 +515,12 @@ export function Canvas() {
 
                 if (snapping) {
                   const smart = getSmartSnap(data.x, data.y, size.w, size.h, el.id);
-                  let snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
-                  let snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
+                  let snappedX = smart.guidesX.length
+                    ? smart.x
+                    : applySnap(data.x, true, gridOffset.minorX);
+                  let snappedY = smart.guidesY.length
+                    ? smart.y
+                    : applySnap(data.y, true, gridOffset.minorY);
                   const { dx, dy } = applyAxisLock(
                     snappedX - el.layout.x,
                     snappedY - el.layout.y,
@@ -479,7 +539,10 @@ export function Canvas() {
                   const nextY = el.layout.y + dy;
                   updateElementLayout(
                     el.id,
-                    { x: applySnap(nextX, false), y: applySnap(nextY, false) },
+                    {
+                      x: applySnap(nextX, false, gridOffset.minorX),
+                      y: applySnap(nextY, false, gridOffset.minorY),
+                    },
                     true,
                   );
                 }

@@ -6,6 +6,9 @@ export function usePlayback() {
   const {
     isPlaying,
     loopEnabled,
+    loopRepeat,
+    loopYoyo,
+    previewSpeed,
     elements,
     currentTime,
     stagger,
@@ -51,20 +54,21 @@ export function usePlayback() {
     elements.forEach((el, index) => {
       const target = `[data-gsap-id='${el.id}']`;
       gsap.set(target, baseState.current);
-      tl.to(
-        target,
-        {
-          x: el.animation.x,
-          y: el.animation.y,
-          rotation: el.animation.rotation,
-          scale: el.animation.scale,
-          opacity: el.animation.opacity,
-          duration: el.animation.duration,
-          delay: el.animation.delay,
-          ease: el.animation.ease,
-        },
-        index * stagger,
-      );
+      const at = index * stagger;
+      const duration = el.animation.duration;
+      const delay = el.animation.delay;
+      const baseEase = el.animation.ease;
+      const easeX = el.animation.easeX ?? baseEase;
+      const easeY = el.animation.easeY ?? baseEase;
+      const easeRotation = el.animation.easeRotation ?? baseEase;
+      const easeScale = el.animation.easeScale ?? baseEase;
+      const easeOpacity = el.animation.easeOpacity ?? baseEase;
+
+      tl.to(target, { x: el.animation.x, duration, delay, ease: easeX }, at);
+      tl.to(target, { y: el.animation.y, duration, delay, ease: easeY }, at);
+      tl.to(target, { rotation: el.animation.rotation, duration, delay, ease: easeRotation }, at);
+      tl.to(target, { scale: el.animation.scale, duration, delay, ease: easeScale }, at);
+      tl.to(target, { opacity: el.animation.opacity, duration, delay, ease: easeOpacity }, at);
     });
 
     timelineRef.current = tl;
@@ -72,16 +76,30 @@ export function usePlayback() {
     tl.time(currentTimeRef.current, false);
 
     if (loopEnabled) {
-      tl.repeat(-1);
+      tl.repeat(loopRepeat === 0 ? -1 : loopRepeat);
+      tl.yoyo(loopYoyo);
     } else {
       tl.repeat(0);
+      tl.yoyo(false);
     }
+
+    tl.timeScale(previewSpeed);
 
     if (isPlayingRef.current) {
       tl.play();
       wasPlayingRef.current = true;
     }
-  }, [elements, loopEnabled, stagger, setCurrentTime, setDuration, setIsPlaying]);
+  }, [
+    elements,
+    loopEnabled,
+    loopRepeat,
+    loopYoyo,
+    previewSpeed,
+    stagger,
+    setCurrentTime,
+    setDuration,
+    setIsPlaying,
+  ]);
 
   useEffect(() => {
     const tl = timelineRef.current;

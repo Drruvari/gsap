@@ -32,18 +32,22 @@ export const generateReactCode = (elements: SceneElement[], stagger = 0) => {
   // 2. Generate GSAP Code
   const gsapLogic = elements
     .map((el, index) => {
-      // Note: We use animation props here
-      const position = stagger > 0 ? `, ${index} * ${stagger}` : '';
-      return `    tl.to(refs.current['${el.id}'], {
-      x: ${el.animation.x},
-      y: ${el.animation.y},
-      rotation: ${el.animation.rotation},
-      scale: ${el.animation.scale},
-      opacity: ${el.animation.opacity},
-      duration: ${el.animation.duration},
-      delay: ${el.animation.delay},
-      ease: "${el.animation.ease}"
-    }${position});`;
+      const at = stagger > 0 ? `${index} * ${stagger}` : '0';
+      const duration = el.animation.duration;
+      const delay = el.animation.delay;
+      const baseEase = el.animation.ease;
+      const easeX = el.animation.easeX ?? baseEase;
+      const easeY = el.animation.easeY ?? baseEase;
+      const easeRotation = el.animation.easeRotation ?? baseEase;
+      const easeScale = el.animation.easeScale ?? baseEase;
+      const easeOpacity = el.animation.easeOpacity ?? baseEase;
+      return [
+        `    tl.to(refs.current['${el.id}'], { x: ${el.animation.x}, duration: ${duration}, delay: ${delay}, ease: "${easeX}" }, ${at});`,
+        `    tl.to(refs.current['${el.id}'], { y: ${el.animation.y}, duration: ${duration}, delay: ${delay}, ease: "${easeY}" }, ${at});`,
+        `    tl.to(refs.current['${el.id}'], { rotation: ${el.animation.rotation}, duration: ${duration}, delay: ${delay}, ease: "${easeRotation}" }, ${at});`,
+        `    tl.to(refs.current['${el.id}'], { scale: ${el.animation.scale}, duration: ${duration}, delay: ${delay}, ease: "${easeScale}" }, ${at});`,
+        `    tl.to(refs.current['${el.id}'], { opacity: ${el.animation.opacity}, duration: ${duration}, delay: ${delay}, ease: "${easeOpacity}" }, ${at});`,
+      ].join('\n');
     })
     .join('\n\n');
 
