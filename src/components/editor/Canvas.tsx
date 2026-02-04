@@ -41,6 +41,7 @@ export function Canvas() {
     gridMajorOpacity,
     showCenterCrosshair,
     canvasSize,
+    setShowCenterCrosshair,
   } = useEditorStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<Record<string, { x: number; y: number }>>({});
@@ -254,6 +255,8 @@ export function Canvas() {
     snapEnabled,
     gridSize,
     isPlaying,
+    showCenterCrosshair,
+    setShowCenterCrosshair,
     clearSelection,
     selectAll,
     duplicateSelected,

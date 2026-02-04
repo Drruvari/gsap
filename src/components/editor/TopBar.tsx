@@ -2,6 +2,7 @@ import { ModeToggle } from '@/components/mode-toggle';
 import { Button } from '@/components/ui/button';
 import { SidebarLeft01Icon, SidebarRight01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
+import { HelpDialog } from '@/components/editor/HelpDialog';
 
 type TopBarProps = {
   showLeft: boolean;
@@ -53,6 +54,7 @@ export function TopBar({ showLeft, showRight, onToggleLeft, onToggleRight }: Top
           >
             ☕ Support
           </a>
+          <HelpDialog />
           <ModeToggle />
         </div>
       </div>

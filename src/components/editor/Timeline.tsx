@@ -85,9 +85,10 @@ export function Timeline() {
             <HugeiconsIcon icon={isPlaying ? StopIcon : PlayIcon} fill="currentColor" />
           </Button>
           <Button
-            variant={loopEnabled ? 'secondary' : 'outline'}
+            variant={loopEnabled ? 'default' : 'outline'}
             size="sm"
             onClick={() => setLoopEnabled(!loopEnabled)}
+            className={loopEnabled ? 'ring-1 ring-primary/40' : undefined}
           >
             Loop
           </Button>
@@ -103,9 +104,10 @@ export function Timeline() {
             />
           </div>
           <Button
-            variant={loopYoyo ? 'secondary' : 'outline'}
+            variant={loopYoyo ? 'default' : 'outline'}
             size="xs"
             onClick={() => setLoopYoyo(!loopYoyo)}
+            className={loopYoyo ? 'ring-1 ring-primary/40' : undefined}
           >
             Yoyo
           </Button>

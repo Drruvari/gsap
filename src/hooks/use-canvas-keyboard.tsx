@@ -9,6 +9,8 @@ type UseCanvasKeyboardProps = {
   snapEnabled: boolean;
   gridSize: number;
   isPlaying: boolean;
+  showCenterCrosshair: boolean;
+  setShowCenterCrosshair: (value: boolean) => void;
   clearSelection: () => void;
   selectAll: () => void;
   duplicateSelected: () => void;
@@ -31,6 +33,8 @@ export function useCanvasKeyboard({
   snapEnabled,
   gridSize,
   isPlaying,
+  showCenterCrosshair,
+  setShowCenterCrosshair,
   clearSelection,
   selectAll,
   duplicateSelected,
@@ -89,6 +93,12 @@ export function useCanvasKeyboard({
       if (event.key.toLowerCase() === 'g') {
         event.preventDefault();
         toggleSnap();
+        return;
+      }
+
+      if (event.key.toLowerCase() === 'c') {
+        event.preventDefault();
+        setShowCenterCrosshair(!showCenterCrosshair);
         return;
       }
 
@@ -159,6 +169,8 @@ export function useCanvasKeyboard({
     gridOffset.y,
     gridSize,
     isPlaying,
+    showCenterCrosshair,
+    setShowCenterCrosshair,
     redo,
     resetElements,
     selectAll,
