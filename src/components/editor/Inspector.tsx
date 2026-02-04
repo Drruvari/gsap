@@ -28,6 +28,8 @@ export function Inspector() {
     deleteElement,
     alignSelected,
     distributeSelected,
+    alignSelectedToCanvas,
+    distributeSelectedToCanvas,
     canvasSize,
   } = useEditorStore();
   const easePreviewRef = useRef<string | null>(null);
@@ -97,6 +99,76 @@ export function Inspector() {
                 H
               </Button>
               <Button variant="outline" size="xs" onClick={() => distributeSelected('y')}>
+                V
+              </Button>
+            </div>
+            <div className="text-[11px] font-medium text-foreground/70">Canvas Align</div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="xs"
+                disabled={canvasSize.w === 0 || canvasSize.h === 0}
+                onClick={() => alignSelectedToCanvas('left')}
+              >
+                L
+              </Button>
+              <Button
+                variant="outline"
+                size="xs"
+                disabled={canvasSize.w === 0 || canvasSize.h === 0}
+                onClick={() => alignSelectedToCanvas('center')}
+              >
+                C
+              </Button>
+              <Button
+                variant="outline"
+                size="xs"
+                disabled={canvasSize.w === 0 || canvasSize.h === 0}
+                onClick={() => alignSelectedToCanvas('right')}
+              >
+                R
+              </Button>
+              <Button
+                variant="outline"
+                size="xs"
+                disabled={canvasSize.w === 0 || canvasSize.h === 0}
+                onClick={() => alignSelectedToCanvas('top')}
+              >
+                T
+              </Button>
+              <Button
+                variant="outline"
+                size="xs"
+                disabled={canvasSize.w === 0 || canvasSize.h === 0}
+                onClick={() => alignSelectedToCanvas('middle')}
+              >
+                M
+              </Button>
+              <Button
+                variant="outline"
+                size="xs"
+                disabled={canvasSize.w === 0 || canvasSize.h === 0}
+                onClick={() => alignSelectedToCanvas('bottom')}
+              >
+                B
+              </Button>
+            </div>
+            <div className="text-[11px] font-medium text-foreground/70">Canvas Distribute</div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="xs"
+                disabled={canvasSize.w === 0 || canvasSize.h === 0}
+                onClick={() => distributeSelectedToCanvas('x')}
+              >
+                H
+              </Button>
+              <Button
+                variant="outline"
+                size="xs"
+                disabled={canvasSize.w === 0 || canvasSize.h === 0}
+                onClick={() => distributeSelectedToCanvas('y')}
+              >
                 V
               </Button>
             </div>

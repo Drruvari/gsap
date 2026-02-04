@@ -85,6 +85,16 @@ interface EditorState {
   setSelection: (ids: string[]) => void;
   alignSelected: (mode: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   distributeSelected: (axis: 'x' | 'y') => void;
+  alignSelectedToCanvas: (mode: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  distributeSelectedToCanvas: (axis: 'x' | 'y') => void;
+  importScene: (payload: {
+    elements: SceneElement[];
+    selectedId?: string | null;
+    selectedIds?: string[];
+    stagger?: number;
+    snapEnabled?: boolean;
+    gridSize?: number;
+  }) => void;
 }
 
 type EditorSnapshot = Pick<
@@ -486,6 +496,101 @@ export const useEditorStore = create<EditorState>()(
             }),
           };
         }),
+      alignSelectedToCanvas: (mode) =>
+        set((state) => {
+          if (state.selectedIds.length === 0) return state;
+          if (state.canvasSize.w === 0 || state.canvasSize.h === 0) return state;
+          const selected = state.elements.filter((el) => state.selectedIds.includes(el.id));
+          if (selected.length === 0) return state;
+
+          const updates = selected.map((el) => {
+            if (mode === 'left') return { id: el.id, x: 0, y: el.layout.y };
+            if (mode === 'right')
+              return { id: el.id, x: state.canvasSize.w - el.size.w, y: el.layout.y };
+            if (mode === 'center')
+              return { id: el.id, x: state.canvasSize.w / 2 - el.size.w / 2, y: el.layout.y };
+            if (mode === 'top') return { id: el.id, x: el.layout.x, y: 0 };
+            if (mode === 'bottom')
+              return { id: el.id, x: el.layout.x, y: state.canvasSize.h - el.size.h };
+            return {
+              id: el.id,
+              x: el.layout.x,
+              y: state.canvasSize.h / 2 - el.size.h / 2,
+            };
+          });
+
+          const updateMap = new Map(updates.map((u) => [u.id, u]));
+          return {
+            historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
+            historyFuture: [],
+            elements: state.elements.map((el) => {
+              const next = updateMap.get(el.id);
+              if (!next) return el;
+              return { ...el, layout: { x: next.x, y: next.y } };
+            }),
+          };
+        }),
+      distributeSelectedToCanvas: (axis) =>
+        set((state) => {
+          if (state.selectedIds.length < 2) return state;
+          if (state.canvasSize.w === 0 || state.canvasSize.h === 0) return state;
+          const selected = state.elements
+            .filter((el) => state.selectedIds.includes(el.id))
+            .slice()
+            .sort((a, b) => (axis === 'x' ? a.layout.x - b.layout.x : a.layout.y - b.layout.y));
+          if (selected.length < 2) return state;
+
+          if (axis === 'x') {
+            const total = selected.reduce((sum, el) => sum + el.size.w, 0);
+            const space = (state.canvasSize.w - total) / (selected.length - 1);
+            let cursor = 0;
+            const updates = selected.map((el) => {
+              const next = { id: el.id, x: cursor, y: el.layout.y };
+              cursor += el.size.w + space;
+              return next;
+            });
+            const updateMap = new Map(updates.map((u) => [u.id, u]));
+            return {
+              historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
+              historyFuture: [],
+              elements: state.elements.map((el) => {
+                const next = updateMap.get(el.id);
+                if (!next) return el;
+                return { ...el, layout: { x: next.x, y: next.y } };
+              }),
+            };
+          }
+
+          const total = selected.reduce((sum, el) => sum + el.size.h, 0);
+          const space = (state.canvasSize.h - total) / (selected.length - 1);
+          let cursor = 0;
+          const updates = selected.map((el) => {
+            const next = { id: el.id, x: el.layout.x, y: cursor };
+            cursor += el.size.h + space;
+            return next;
+          });
+          const updateMap = new Map(updates.map((u) => [u.id, u]));
+          return {
+            historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
+            historyFuture: [],
+            elements: state.elements.map((el) => {
+              const next = updateMap.get(el.id);
+              if (!next) return el;
+              return { ...el, layout: { x: next.x, y: next.y } };
+            }),
+          };
+        }),
+      importScene: (payload) =>
+        set((state) => ({
+          historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
+          historyFuture: [],
+          elements: payload.elements ?? state.elements,
+          selectedId: payload.selectedId ?? null,
+          selectedIds: payload.selectedIds ?? [],
+          stagger: payload.stagger ?? state.stagger,
+          snapEnabled: payload.snapEnabled ?? state.snapEnabled,
+          gridSize: payload.gridSize ?? state.gridSize,
+        })),
       undo: () =>
         set((state) => {
           const previous = state.historyPast[state.historyPast.length - 1];

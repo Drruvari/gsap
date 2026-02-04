@@ -1,6 +1,6 @@
 import { type SceneElement } from '@/lib/store';
 
-export const generateReactCode = (elements: SceneElement[]) => {
+export const generateReactCode = (elements: SceneElement[], stagger = 0) => {
   // 1. Generate JSX
   const jsxElements = elements
     .map((el) => {
@@ -31,9 +31,10 @@ export const generateReactCode = (elements: SceneElement[]) => {
 
   // 2. Generate GSAP Code
   const gsapLogic = elements
-    .map((el) => {
+    .map((el, index) => {
       // Note: We use animation props here
-      return `    gsap.to(refs.current['${el.id}'], {
+      const position = stagger > 0 ? `, ${index} * ${stagger}` : '';
+      return `    tl.to(refs.current['${el.id}'], {
       x: ${el.animation.x},
       y: ${el.animation.y},
       rotation: ${el.animation.rotation},
@@ -42,7 +43,7 @@ export const generateReactCode = (elements: SceneElement[]) => {
       duration: ${el.animation.duration},
       delay: ${el.animation.delay},
       ease: "${el.animation.ease}"
-    });`;
+    }${position});`;
     })
     .join('\n\n');
 
@@ -55,6 +56,7 @@ export default function Animation() {
   const refs = useRef({});
 
   useGSAP(() => {
+    const tl = gsap.timeline();
 ${gsapLogic}
   }, []);
 

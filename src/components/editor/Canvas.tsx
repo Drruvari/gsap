@@ -217,6 +217,12 @@ export function Canvas() {
     return { x: snappedX, y: snappedY, guidesX: guideX, guidesY: guideY };
   };
 
+  const applyAxisLock = useCallback((dx: number, dy: number, event: { shiftKey?: boolean }) => {
+    if (!event.shiftKey) return { dx, dy };
+    if (Math.abs(dx) >= Math.abs(dy)) return { dx, dy: 0 };
+    return { dx: 0, dy };
+  }, []);
+
   useCanvasKeyboard({
     applySnap,
     elementMap,
@@ -353,8 +359,9 @@ export function Canvas() {
                   if (!activeStart) return;
                   const nextActiveX = applySnap(data.x, snapping);
                   const nextActiveY = applySnap(data.y, snapping);
-                  const dx = nextActiveX - activeStart.x;
-                  const dy = nextActiveY - activeStart.y;
+                  const rawDx = nextActiveX - activeStart.x;
+                  const rawDy = nextActiveY - activeStart.y;
+                  const { dx, dy } = applyAxisLock(rawDx, rawDy, event);
                   const updates = selectedIds
                     .map((id) => {
                       const item = start[id];
@@ -372,8 +379,15 @@ export function Canvas() {
 
                 if (snapping) {
                   const smart = getSmartSnap(data.x, data.y, size.w, size.h, el.id);
-                  const snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
-                  const snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
+                  let snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
+                  let snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
+                  const { dx, dy } = applyAxisLock(
+                    snappedX - el.layout.x,
+                    snappedY - el.layout.y,
+                    event,
+                  );
+                  snappedX = el.layout.x + dx;
+                  snappedY = el.layout.y + dy;
                   const display = getCenterDisplay(snappedX, snappedY, size);
                   setGuides({ x: smart.guidesX, y: smart.guidesY });
                   setDragLabel({
@@ -390,18 +404,21 @@ export function Canvas() {
                 }
 
                 setGuides({ x: [], y: [] });
-                const display = getCenterDisplay(data.x, data.y, size);
+                const { dx, dy } = applyAxisLock(data.x - el.layout.x, data.y - el.layout.y, event);
+                const nextX = el.layout.x + dx;
+                const nextY = el.layout.y + dy;
+                const display = getCenterDisplay(nextX, nextY, size);
                 setDragLabel({
                   id: el.id,
-                  x: data.x,
-                  y: data.y,
+                  x: nextX,
+                  y: nextY,
                   w: size.w,
                   ...display,
                 });
                 scheduleUpdate(() =>
                   updateElementLayout(
                     el.id,
-                    { x: applySnap(data.x, false), y: applySnap(data.y, false) },
+                    { x: applySnap(nextX, false), y: applySnap(nextY, false) },
                     false,
                   ),
                 );
@@ -419,8 +436,9 @@ export function Canvas() {
                   if (!activeStart) return;
                   const nextActiveX = applySnap(data.x, snapping);
                   const nextActiveY = applySnap(data.y, snapping);
-                  const dx = nextActiveX - activeStart.x;
-                  const dy = nextActiveY - activeStart.y;
+                  const rawDx = nextActiveX - activeStart.x;
+                  const rawDy = nextActiveY - activeStart.y;
+                  const { dx, dy } = applyAxisLock(rawDx, rawDy, event);
                   const updates = selectedIds
                     .map((id) => {
                       const item = start[id];
@@ -441,13 +459,27 @@ export function Canvas() {
 
                 if (snapping) {
                   const smart = getSmartSnap(data.x, data.y, size.w, size.h, el.id);
-                  const snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
-                  const snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
+                  let snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
+                  let snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
+                  const { dx, dy } = applyAxisLock(
+                    snappedX - el.layout.x,
+                    snappedY - el.layout.y,
+                    event,
+                  );
+                  snappedX = el.layout.x + dx;
+                  snappedY = el.layout.y + dy;
                   updateElementLayout(el.id, { x: snappedX, y: snappedY }, true);
                 } else {
+                  const { dx, dy } = applyAxisLock(
+                    data.x - el.layout.x,
+                    data.y - el.layout.y,
+                    event,
+                  );
+                  const nextX = el.layout.x + dx;
+                  const nextY = el.layout.y + dy;
                   updateElementLayout(
                     el.id,
-                    { x: applySnap(data.x, false), y: applySnap(data.y, false) },
+                    { x: applySnap(nextX, false), y: applySnap(nextY, false) },
                     true,
                   );
                 }

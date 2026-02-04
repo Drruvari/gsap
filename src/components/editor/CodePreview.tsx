@@ -1,103 +1,130 @@
 import { useEditorStore } from '@/lib/store';
+import { generateReactCode } from '@/lib/generator';
 import { Button } from '@/components/ui/button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export function CodePreview() {
-  const { elements } = useEditorStore();
+  const { elements, stagger, snapEnabled, gridSize, importScene } = useEditorStore();
   const [copied, setCopied] = useState(false);
+  const [jsonCopied, setJsonCopied] = useState(false);
+  const [jsonImported, setJsonImported] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isEmpty = elements.length === 0;
 
-  const generateCode = () => {
-    if (elements.length === 0) return '';
+  const generateCode = () => generateReactCode(elements, stagger);
 
-    const refs = elements
-      .map((el) => `const ${el.type}${el.id.slice(0, 4)}Ref = useRef(null);`)
-      .join('\n  ');
+  const exportScene = () => JSON.stringify({ elements, stagger, snapEnabled, gridSize }, null, 2);
 
-    const jsx = elements
-      .map((el) => {
-        let classes = 'absolute ';
-        if (el.type === 'box') classes += 'w-20 h-20 bg-blue-500 rounded-lg';
-        if (el.type === 'circle') classes += 'w-20 h-20 bg-rose-500 rounded-full';
-        if (el.type === 'text') classes += 'text-zinc-800';
+  const handleImport = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const payload = JSON.parse(text);
+      if (!payload || !Array.isArray(payload.elements)) return;
+      importScene({
+        elements: payload.elements,
+        stagger: payload.stagger,
+        snapEnabled: payload.snapEnabled,
+        gridSize: payload.gridSize,
+      });
+      setJsonImported(true);
+      window.setTimeout(() => setJsonImported(false), 1400);
+    } catch {
+      setJsonImported(true);
+      window.setTimeout(() => setJsonImported(false), 1400);
+    }
+  };
 
-        // Inline styles for initial layout
-        const width = el.size?.w ?? (el.type === 'text' ? 220 : 120);
-        const height = el.size?.h ?? (el.type === 'text' ? 64 : 120);
-        const fontSize = el.textStyle?.fontSize ?? 24;
-        const fontWeight = el.textStyle?.fontWeight ?? 600;
-        const lineHeight = el.textStyle?.lineHeight ?? 1.1;
-        const textStyles =
-          el.type === 'text'
-            ? `, fontSize: ${fontSize}, fontWeight: ${fontWeight}, lineHeight: ${lineHeight}, whiteSpace: 'pre-wrap'`
-            : '';
-        const style = `{{ left: ${el.layout.x}, top: ${el.layout.y}, width: ${width}, height: ${height}${textStyles} }}`;
+  const handleFileImport = async (file: File) => {
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      if (!payload || !Array.isArray(payload.elements)) return;
+      importScene({
+        elements: payload.elements,
+        stagger: payload.stagger,
+        snapEnabled: payload.snapEnabled,
+        gridSize: payload.gridSize,
+      });
+      setJsonImported(true);
+      window.setTimeout(() => setJsonImported(false), 1400);
+    } catch {
+      setJsonImported(true);
+      window.setTimeout(() => setJsonImported(false), 1400);
+    }
+  };
 
-        const content = el.type === 'text' ? `{${JSON.stringify(el.text ?? 'Text')}}` : '';
-        return `      <div ref={${el.type}${el.id.slice(0, 4)}Ref} className="${classes}" style=${style}>\n        ${content}\n      </div>`;
-      })
-      .join('\n');
-
-    const animations = elements
-      .map((el) => {
-        return `    gsap.to(${el.type}${el.id.slice(0, 4)}Ref.current, {
-      x: ${el.animation.x},
-      y: ${el.animation.y},
-      rotation: ${el.animation.rotation},
-      scale: ${el.animation.scale},
-      opacity: ${el.animation.opacity},
-      duration: ${el.animation.duration},
-      delay: ${el.animation.delay},
-      ease: "${el.animation.ease}"
-    });`;
-      })
-      .join('\n\n');
-
-    return `import React, { useRef } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
-
-export default function Animation() {
-  ${refs}
-
-  useGSAP(() => {
-${animations}
-  });
-
-  return (
-    <div className="relative w-full h-screen bg-zinc-50 overflow-hidden">
-${jsx}
-    </div>
-  );
-}`;
+  const handleDownloadJson = () => {
+    const blob = new Blob([exportScene()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'gsap-scene.json';
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-3 flex justify-between items-center border-b border-border/60 bg-transparent">
-        <div className="flex items-center gap-2">
+      <div className="px-4 py-3 flex flex-col gap-2 border-b border-border/60 bg-transparent">
+        <div className="flex items-center gap-2 whitespace-nowrap">
           <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary">
             Export
           </span>
           <span className="font-semibold text-sm">React + GSAP</span>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-2"
-          onClick={async () => {
-            await navigator.clipboard.writeText(generateCode());
-            setCopied(true);
-            window.setTimeout(() => setCopied(false), 1400);
-          }}
-        >
-          <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} size={16} />
-          {copied ? 'Copied' : 'Copy'}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 justify-start">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            onClick={async () => {
+              await navigator.clipboard.writeText(generateCode());
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1400);
+            }}
+          >
+            <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} size={16} />
+            {copied ? 'Copied' : 'Copy Code'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            onClick={async () => {
+              await navigator.clipboard.writeText(exportScene());
+              setJsonCopied(true);
+              window.setTimeout(() => setJsonCopied(false), 1400);
+            }}
+          >
+            <HugeiconsIcon icon={jsonCopied ? Tick02Icon : Copy01Icon} size={16} />
+            {jsonCopied ? 'Scene Copied' : 'Copy JSON'}
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleImport}>
+            {jsonImported ? 'Imported' : 'Import JSON'}
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleDownloadJson}>
+            Download JSON
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+            Import File
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              handleFileImport(file);
+              event.currentTarget.value = '';
+            }}
+          />
+        </div>
       </div>
       <div className="flex-1 p-0 overflow-hidden relative">
         <SyntaxHighlighter

@@ -34,6 +34,8 @@ export function useCanvasResize({
       const dx = event.clientX - startX;
       const dy = event.clientY - startY;
       const minSize = 16;
+      const lockAspect = event.shiftKey;
+      const aspect = startW / startH || 1;
 
       let nextW = startW;
       let nextH = startH;
@@ -53,6 +55,23 @@ export function useCanvasResize({
       if (dir.includes('n')) {
         nextH = Math.max(minSize, startH - dy);
         nextY = startTop + dy;
+      }
+
+      if (lockAspect) {
+        const widthFromHeight = nextH * aspect;
+        const heightFromWidth = nextW / aspect;
+        if (Math.abs(nextW - startW) >= Math.abs(nextH - startH)) {
+          nextH = Math.max(minSize, heightFromWidth);
+        } else {
+          nextW = Math.max(minSize, widthFromHeight);
+        }
+
+        if (dir.includes('w')) {
+          nextX = startLeft + (startW - nextW);
+        }
+        if (dir.includes('n')) {
+          nextY = startTop + (startH - nextH);
+        }
       }
 
       const snapping = snapEnabled && !event.altKey;
@@ -74,6 +93,8 @@ export function useCanvasResize({
       const dx = event.clientX - startX;
       const dy = event.clientY - startY;
       const minSize = 16;
+      const lockAspect = event.shiftKey;
+      const aspect = startW / startH || 1;
 
       let nextW = startW;
       let nextH = startH;
@@ -93,6 +114,23 @@ export function useCanvasResize({
       if (dir.includes('n')) {
         nextH = Math.max(minSize, startH - dy);
         nextY = startTop + dy;
+      }
+
+      if (lockAspect) {
+        const widthFromHeight = nextH * aspect;
+        const heightFromWidth = nextW / aspect;
+        if (Math.abs(nextW - startW) >= Math.abs(nextH - startH)) {
+          nextH = Math.max(minSize, heightFromWidth);
+        } else {
+          nextW = Math.max(minSize, widthFromHeight);
+        }
+
+        if (dir.includes('w')) {
+          nextX = startLeft + (startW - nextW);
+        }
+        if (dir.includes('n')) {
+          nextY = startTop + (startH - nextH);
+        }
       }
 
       const snapping = snapEnabled && !event.altKey;
