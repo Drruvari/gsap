@@ -1,11 +1,18 @@
-import { createRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createRef, useCallback, useMemo, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
 import { useEditorStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { SquareIcon, CircleIcon, TextIcon } from '@hugeicons/core-free-icons';
+import {
+  CanvasGuides,
+  DragLabel,
+  EmptyCanvasState,
+  MultiSelectBox,
+  SelectionBox,
+} from '@/components/editor/canvas/CanvasOverlays';
+import { useCanvasKeyboard } from '@/hooks/use-canvas-keyboard';
+import { useCanvasResize } from '@/hooks/use-canvas-resize';
+import { useCanvasSelection } from '@/hooks/use-canvas-selection';
 
 export function Canvas() {
   const {
@@ -191,266 +198,42 @@ export function Canvas() {
     return { x: snappedX, y: snappedY, guidesX: guideX, guidesY: guideY };
   };
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const isUndo = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z';
-      const isRedo =
-        (event.metaKey || event.ctrlKey) &&
-        (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'));
-
-      if (isUndo) {
-        event.preventDefault();
-        undo();
-        return;
-      }
-
-      if (isRedo) {
-        event.preventDefault();
-        redo();
-        return;
-      }
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        clearSelection();
-        return;
-      }
-
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
-        event.preventDefault();
-        selectAll();
-        return;
-      }
-
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'd') {
-        event.preventDefault();
-        duplicateSelected();
-        return;
-      }
-
-      if (event.key.toLowerCase() === 'g') {
-        event.preventDefault();
-        toggleSnap();
-        return;
-      }
-
-      if (event.key.toLowerCase() === 'r') {
-        event.preventDefault();
-        resetElements();
-        return;
-      }
-
-      if (event.key === 'Backspace' || event.key === 'Delete') {
-        if (selectedIds.length === 0) return;
-        event.preventDefault();
-        selectedIds.forEach((id) => deleteElement(id));
-        return;
-      }
-
-      if (isPlaying || selectedIds.length === 0) return;
-
-      const target = event.target as HTMLElement | null;
-      const isFormField =
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA' ||
-        target?.tagName === 'SELECT' ||
-        target?.isContentEditable;
-      if (isFormField) return;
-
-      const snapping = snapEnabled && !event.altKey;
-      const baseStep = snapping ? gridSize : 1;
-      const step = event.shiftKey ? baseStep * 5 : baseStep;
-      let dx = 0;
-      let dy = 0;
-
-      switch (event.key) {
-        case 'ArrowLeft':
-          dx = -step;
-          break;
-        case 'ArrowRight':
-          dx = step;
-          break;
-        case 'ArrowUp':
-          dy = -step;
-          break;
-        case 'ArrowDown':
-          dy = step;
-          break;
-        default:
-          return;
-      }
-
-      event.preventDefault();
-
-      const updates = selectedIds
-        .map((id) => {
-          const el = elementMap.get(id);
-          if (!el) return null;
-          const nextX = applySnap(el.layout.x + dx, snapping);
-          const nextY = applySnap(el.layout.y + dy, snapping);
-          return { id, x: nextX, y: nextY };
-        })
-        .filter(Boolean) as Array<{ id: string; x: number; y: number }>;
-
-      if (updates.length > 0) {
-        updateElementsLayout(updates, true);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
+  useCanvasKeyboard({
     applySnap,
-    clearSelection,
-    deleteElement,
-    duplicateSelected,
     elementMap,
-    isPlaying,
-    redo,
-    resetElements,
-    selectAll,
     selectedIds,
     snapEnabled,
     gridSize,
+    isPlaying,
+    clearSelection,
+    selectAll,
+    duplicateSelected,
     toggleSnap,
+    resetElements,
+    deleteElement,
     undo,
+    redo,
     updateElementsLayout,
-  ]);
+  });
 
-  useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
-      if (!resizeRef.current) return;
-      const { id, dir, startX, startY, startW, startH, startLeft, startTop } = resizeRef.current;
-      const dx = event.clientX - startX;
-      const dy = event.clientY - startY;
-      const minSize = 16;
+  useCanvasResize({
+    resizeRef,
+    applySnap,
+    snapEnabled,
+    updateElementLayout,
+    updateElementSize,
+  });
 
-      let nextW = startW;
-      let nextH = startH;
-      let nextX = startLeft;
-      let nextY = startTop;
-
-      if (dir.includes('e')) {
-        nextW = Math.max(minSize, startW + dx);
-      }
-      if (dir.includes('s')) {
-        nextH = Math.max(minSize, startH + dy);
-      }
-      if (dir.includes('w')) {
-        nextW = Math.max(minSize, startW - dx);
-        nextX = startLeft + dx;
-      }
-      if (dir.includes('n')) {
-        nextH = Math.max(minSize, startH - dy);
-        nextY = startTop + dy;
-      }
-
-      const snapping = snapEnabled && !event.altKey;
-      updateElementLayout(
-        id,
-        { x: applySnap(nextX, snapping), y: applySnap(nextY, snapping) },
-        false,
-      );
-      updateElementSize(
-        id,
-        { w: applySnap(nextW, snapping), h: applySnap(nextH, snapping) },
-        false,
-      );
-    };
-
-    const handleMouseUp = (event: MouseEvent) => {
-      if (!resizeRef.current) return;
-      const { id, dir, startX, startY, startW, startH, startLeft, startTop } = resizeRef.current;
-      const dx = event.clientX - startX;
-      const dy = event.clientY - startY;
-      const minSize = 16;
-
-      let nextW = startW;
-      let nextH = startH;
-      let nextX = startLeft;
-      let nextY = startTop;
-
-      if (dir.includes('e')) {
-        nextW = Math.max(minSize, startW + dx);
-      }
-      if (dir.includes('s')) {
-        nextH = Math.max(minSize, startH + dy);
-      }
-      if (dir.includes('w')) {
-        nextW = Math.max(minSize, startW - dx);
-        nextX = startLeft + dx;
-      }
-      if (dir.includes('n')) {
-        nextH = Math.max(minSize, startH - dy);
-        nextY = startTop + dy;
-      }
-
-      const snapping = snapEnabled && !event.altKey;
-      updateElementLayout(
-        id,
-        { x: applySnap(nextX, snapping), y: applySnap(nextY, snapping) },
-        true,
-      );
-      updateElementSize(id, { w: applySnap(nextW, snapping), h: applySnap(nextH, snapping) }, true);
-      resizeRef.current = null;
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [applySnap, snapEnabled, updateElementLayout, updateElementSize]);
-
-  useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
-      if (!selectionStartRef.current || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      const start = selectionStartRef.current;
-      const left = Math.min(start.x, x);
-      const top = Math.min(start.y, y);
-      const width = Math.abs(x - start.x);
-      const height = Math.abs(y - start.y);
-      setSelectionBox({ x: left, y: top, w: width, h: height });
-    };
-
-    const handleMouseUp = () => {
-      if (!selectionStartRef.current) return;
-      const box = selectionBox;
-      selectionStartRef.current = null;
-
-      if (!box || box.w < 2 || box.h < 2) {
-        setSelectionBox(null);
-        return;
-      }
-
-      const hits = elements.filter((el) => {
-        const size = getSize(el);
-        const left = el.layout.x;
-        const right = el.layout.x + size.w;
-        const top = el.layout.y;
-        const bottom = el.layout.y + size.h;
-        return right >= box.x && left <= box.x + box.w && bottom >= box.y && top <= box.y + box.h;
-      });
-
-      setSelection(hits.map((el) => el.id));
-      setSelectionBox(null);
-      suppressClickRef.current = true;
-      window.setTimeout(() => {
-        suppressClickRef.current = false;
-      }, 0);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [elements, selectionBox, setSelection]);
+  useCanvasSelection({
+    containerRef,
+    selectionStartRef,
+    suppressClickRef,
+    selectionBox,
+    setSelectionBox,
+    elements,
+    getSize,
+    setSelection,
+  });
 
   return (
     <div
@@ -711,104 +494,6 @@ export function Canvas() {
             </Draggable>
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-function SelectionBox({ box }: { box: { x: number; y: number; w: number; h: number } | null }) {
-  if (!box) return null;
-  return (
-    <div
-      className="absolute border border-primary/70 bg-primary/10 pointer-events-none"
-      style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
-    />
-  );
-}
-
-function MultiSelectBox({
-  bounds,
-}: {
-  bounds: { minX: number; minY: number; maxX: number; maxY: number } | null;
-}) {
-  if (!bounds) return null;
-  return (
-    <div
-      className="absolute border border-primary/70 pointer-events-none"
-      style={{
-        left: bounds.minX,
-        top: bounds.minY,
-        width: bounds.maxX - bounds.minX,
-        height: bounds.maxY - bounds.minY,
-      }}
-    />
-  );
-}
-
-function CanvasGuides({ guides }: { guides: { x: number[]; y: number[] } }) {
-  return (
-    <>
-      {guides.x.map((x) => (
-        <div
-          key={`guide-x-${x}`}
-          className="absolute top-0 bottom-0 w-px bg-primary/40 pointer-events-none"
-          style={{ left: x }}
-        />
-      ))}
-      {guides.y.map((y) => (
-        <div
-          key={`guide-y-${y}`}
-          className="absolute left-0 right-0 h-px bg-primary/40 pointer-events-none"
-          style={{ top: y }}
-        />
-      ))}
-    </>
-  );
-}
-
-function DragLabel({ label }: { label: { id: string; x: number; y: number } | null }) {
-  if (!label) return null;
-  return (
-    <div
-      className="absolute text-[10px] px-2 py-1 rounded bg-primary text-primary-foreground pointer-events-none shadow-sm"
-      style={{ left: label.x + 8, top: label.y - 24 }}
-    >
-      {Math.round(label.x)}, {Math.round(label.y)}
-    </div>
-  );
-}
-
-function EmptyCanvasState({
-  isEmpty,
-  onAdd,
-}: {
-  isEmpty: boolean;
-  onAdd: (type: 'box' | 'circle' | 'text') => void;
-}) {
-  if (!isEmpty) return null;
-  return (
-    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground select-none">
-      <div className="text-center space-y-3">
-        <div className="text-sm font-medium text-foreground/80">Canvas Empty</div>
-        <div className="text-xs text-muted-foreground">Add elements to start your scene</div>
-        <div className="flex items-center justify-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => onAdd('box')}>
-            <HugeiconsIcon icon={SquareIcon} size={14} />
-            Box
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => onAdd('circle')}>
-            <HugeiconsIcon icon={CircleIcon} size={14} />
-            Circle
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => onAdd('text')}>
-            <HugeiconsIcon icon={TextIcon} size={14} />
-            Text
-          </Button>
-        </div>
-        <div className="text-[11px] text-muted-foreground">
-          Tip: Hold <span className="font-semibold">Alt</span> to disable snap,{' '}
-          <span className="font-semibold">Shift</span> to multi-select
-        </div>
       </div>
     </div>
   );
