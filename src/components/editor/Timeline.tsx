@@ -9,7 +9,7 @@ export function Timeline() {
     isPlaying,
     setIsPlaying,
     addElement,
-    resetElements,
+    resetPreview,
     currentTime,
     duration,
     setCurrentTime,
@@ -57,9 +57,7 @@ export function Timeline() {
           variant="outline"
           size="sm"
           onClick={() => {
-            setIsPlaying(false);
-            setCurrentTime(0);
-            resetElements();
+            resetPreview();
           }}
         >
           Reset

@@ -1,4 +1,4 @@
-import { createRef, useCallback, useMemo, useRef, useState } from 'react';
+import { createRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
 import { useEditorStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -35,17 +35,27 @@ export function Canvas() {
     duplicateSelected,
     toggleSnap,
     resetElements,
+    setCanvasSize,
+    updateElementText,
   } = useEditorStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<Record<string, { x: number; y: number }>>({});
   const [guides, setGuides] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] });
-  const [dragLabel, setDragLabel] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [dragLabel, setDragLabel] = useState<{
+    id: string;
+    x: number;
+    y: number;
+    w: number;
+    displayX: number;
+    displayY: number;
+  } | null>(null);
   const [selectionBox, setSelectionBox] = useState<{
     x: number;
     y: number;
     w: number;
     h: number;
   } | null>(null);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const selectionStartRef = useRef<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
   const rafRef = useRef<number | null>(null);
@@ -75,6 +85,8 @@ export function Canvas() {
     if (el.type === 'text') return { w: 220, h: 64 };
     return { w: 120, h: 120 };
   }, []);
+
+  const minTextSize = { w: 120, h: 48 };
 
   const sizeMap = useMemo(() => {
     const map = new Map<string, { w: number; h: number }>();
@@ -118,6 +130,17 @@ export function Canvas() {
       pendingRef.current = null;
       run?.();
     });
+  }, []);
+
+  const getCenterDisplay = useCallback((x: number, y: number, size: { w: number; h: number }) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return { displayX: x, displayY: y };
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    return {
+      displayX: x + size.w / 2 - centerX,
+      displayY: y + size.h / 2 - centerY,
+    };
   }, []);
 
   const getSmartSnap = (
@@ -231,6 +254,20 @@ export function Canvas() {
     setSelection,
   });
 
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const element = containerRef.current;
+    const updateSize = () => {
+      const rect = element.getBoundingClientRect();
+      setCanvasSize({ w: rect.width, h: rect.height });
+    };
+    updateSize();
+
+    const observer = new ResizeObserver(() => updateSize());
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [setCanvasSize]);
+
   return (
     <div
       className={cn(
@@ -283,7 +320,7 @@ export function Canvas() {
             <Draggable
               key={el.id}
               nodeRef={nodeRef}
-              cancel="[data-resize-handle]"
+              cancel="[data-resize-handle], [contenteditable='true']"
               // Controlled position: links Drag state to Store state
               position={{ x: el.layout.x, y: el.layout.y }}
               onStart={(event, data) => {
@@ -337,8 +374,15 @@ export function Canvas() {
                   const smart = getSmartSnap(data.x, data.y, size.w, size.h, el.id);
                   const snappedX = smart.guidesX.length ? smart.x : applySnap(data.x, true);
                   const snappedY = smart.guidesY.length ? smart.y : applySnap(data.y, true);
+                  const display = getCenterDisplay(snappedX, snappedY, size);
                   setGuides({ x: smart.guidesX, y: smart.guidesY });
-                  setDragLabel({ id: el.id, x: snappedX, y: snappedY });
+                  setDragLabel({
+                    id: el.id,
+                    x: snappedX,
+                    y: snappedY,
+                    w: size.w,
+                    ...display,
+                  });
                   scheduleUpdate(() =>
                     updateElementLayout(el.id, { x: snappedX, y: snappedY }, false),
                   );
@@ -346,7 +390,14 @@ export function Canvas() {
                 }
 
                 setGuides({ x: [], y: [] });
-                setDragLabel({ id: el.id, x: data.x, y: data.y });
+                const display = getCenterDisplay(data.x, data.y, size);
+                setDragLabel({
+                  id: el.id,
+                  x: data.x,
+                  y: data.y,
+                  w: size.w,
+                  ...display,
+                });
                 scheduleUpdate(() =>
                   updateElementLayout(
                     el.id,
@@ -409,7 +460,6 @@ export function Canvas() {
             >
               <div
                 ref={nodeRef}
-                data-gsap-id={el.id}
                 onClick={(e) => {
                   e.stopPropagation();
                   selectElement(el.id, e.shiftKey);
@@ -422,26 +472,72 @@ export function Canvas() {
                 )}
                 style={{ width: size.w, height: size.h }}
               >
-                {/* Element Visual Representation */}
-                {el.type === 'box' && (
-                  <div className="w-full h-full bg-blue-500 corner-squircle shadow-sm flex items-center justify-center text-white/80 text-sm font-medium">
-                    Box
-                  </div>
-                )}
+                <div data-gsap-id={el.id} className="w-full h-full">
+                  {/* Element Visual Representation */}
+                  {el.type === 'box' && (
+                    <div className="w-full h-full bg-blue-500 corner-squircle shadow-sm" />
+                  )}
 
-                {el.type === 'circle' && (
-                  <div className="w-full h-full bg-rose-500 rounded-full shadow-sm flex items-center justify-center text-white/80 text-sm font-medium">
-                    Circle
-                  </div>
-                )}
+                  {el.type === 'circle' && (
+                    <div className="w-full h-full bg-rose-500 rounded-full shadow-sm" />
+                  )}
 
-                {el.type === 'text' && (
-                  <div className="w-full h-full whitespace-nowrap px-3 py-2 border border-transparent hover:border-zinc-200 corner-squircle flex items-center">
-                    <span className="text-lg font-semibold text-foreground leading-none">
-                      Animate Me
-                    </span>
-                  </div>
-                )}
+                  {el.type === 'text' && (
+                    <div className="w-full h-full px-3 py-2 border border-transparent hover:border-zinc-200 corner-squircle flex items-center">
+                      <span
+                        className="text-foreground leading-none whitespace-pre-wrap break-words w-full outline-none block"
+                        contentEditable={editingTextId === el.id}
+                        suppressContentEditableWarning
+                        onDoubleClick={(event) => {
+                          event.stopPropagation();
+                          setEditingTextId(el.id);
+                          window.setTimeout(() => {
+                            event.currentTarget.focus();
+                          }, 0);
+                        }}
+                        onMouseDown={(event) => {
+                          if (editingTextId !== el.id) return;
+                          event.stopPropagation();
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            if (!event.shiftKey) {
+                              event.preventDefault();
+                              (event.currentTarget as HTMLSpanElement).blur();
+                            }
+                          }
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            (event.currentTarget as HTMLSpanElement).blur();
+                          }
+                        }}
+                        onInput={(event) => {
+                          const node = event.currentTarget;
+                          const nextW = Math.max(minTextSize.w, Math.ceil(node.scrollWidth));
+                          const nextH = Math.max(minTextSize.h, Math.ceil(node.scrollHeight));
+                          updateElementSize(el.id, { w: nextW, h: nextH }, false);
+                        }}
+                        onBlur={(event) => {
+                          const next = event.currentTarget.textContent || '';
+                          const normalized = next.trim() ? next.replace(/\s+$/g, '') : 'Text';
+                          updateElementText(el.id, normalized);
+                          const node = event.currentTarget;
+                          const nextW = Math.max(minTextSize.w, Math.ceil(node.scrollWidth));
+                          const nextH = Math.max(minTextSize.h, Math.ceil(node.scrollHeight));
+                          updateElementSize(el.id, { w: nextW, h: nextH }, true);
+                          setEditingTextId((current) => (current === el.id ? null : current));
+                        }}
+                        style={{
+                          fontSize: el.textStyle?.fontSize ?? 24,
+                          fontWeight: el.textStyle?.fontWeight ?? 600,
+                          lineHeight: el.textStyle?.lineHeight ?? 1.1,
+                        }}
+                      >
+                        {el.text ?? 'Animate Me'}
+                      </span>
+                    </div>
+                  )}
+                </div>
 
                 {/* Selection Label (only when selected and not playing) */}
                 {isSelected && !isPlaying && (

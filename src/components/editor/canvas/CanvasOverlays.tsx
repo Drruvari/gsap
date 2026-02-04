@@ -56,14 +56,25 @@ export function CanvasGuides({ guides }: { guides: { x: number[]; y: number[] } 
   );
 }
 
-export function DragLabel({ label }: { label: { id: string; x: number; y: number } | null }) {
+export function DragLabel({
+  label,
+}: {
+  label: {
+    id: string;
+    x: number;
+    y: number;
+    w: number;
+    displayX: number;
+    displayY: number;
+  } | null;
+}) {
   if (!label) return null;
   return (
     <div
-      className="absolute text-[10px] px-2 py-1 rounded bg-primary text-primary-foreground pointer-events-none shadow-sm"
-      style={{ left: label.x + 8, top: label.y - 24 }}
+      className="absolute z-50 text-[10px] px-2 py-1 rounded bg-primary text-primary-foreground pointer-events-none shadow-sm"
+      style={{ left: label.x + label.w + 8, top: label.y + 4 }}
     >
-      {Math.round(label.x)}, {Math.round(label.y)}
+      {Math.round(label.displayX)}, {Math.round(label.displayY)}
     </div>
   );
 }

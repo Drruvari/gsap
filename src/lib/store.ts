@@ -20,6 +20,13 @@ export interface SceneElement {
   id: string;
   type: ElementType;
   label: string;
+  text?: string;
+  textStyle?: {
+    fontSize: number;
+    fontWeight: number;
+    lineHeight: number;
+  };
+  presetKey?: string | null;
   // We separate layout state from animation target state for clarity
   layout: { x: number; y: number };
   initialLayout: { x: number; y: number };
@@ -36,6 +43,8 @@ interface EditorState {
   currentTime: number;
   duration: number;
   stagger: number;
+  previewResetId: number;
+  canvasSize: { w: number; h: number };
   historyPast: EditorSnapshot[];
   historyFuture: EditorSnapshot[];
 
@@ -47,6 +56,13 @@ interface EditorState {
     commit?: boolean,
   ) => void;
   updateElementAnimation: (id: string, props: Partial<AnimationProps>) => void;
+  updateElementPreset: (id: string, presetKey: string, preset: Partial<AnimationProps>) => void;
+  setElementPresetKey: (id: string, presetKey: string | null) => void;
+  updateElementText: (id: string, text: string) => void;
+  updateElementTextStyle: (
+    id: string,
+    style: Partial<NonNullable<SceneElement['textStyle']>>,
+  ) => void;
   selectElement: (id: string | null, additive?: boolean) => void;
   clearSelection: () => void;
   deleteElement: (id: string) => void;
@@ -54,6 +70,8 @@ interface EditorState {
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
   setStagger: (stagger: number) => void;
+  resetPreview: () => void;
+  setCanvasSize: (size: { w: number; h: number }) => void;
   resetElements: () => void;
   snapEnabled: boolean;
   gridSize: number;
@@ -113,6 +131,8 @@ export const useEditorStore = create<EditorState>()(
       currentTime: 0,
       duration: 0,
       stagger: 0,
+      previewResetId: 0,
+      canvasSize: { w: 0, h: 0 },
       snapEnabled: false,
       gridSize: 8,
       historyPast: [],
@@ -123,6 +143,10 @@ export const useEditorStore = create<EditorState>()(
           const id = crypto.randomUUID();
           const size = defaultSizeFor(type);
           const nextIndex = buildNextIndexMap(state.elements).get(type) ?? 1;
+          const hasCanvas = state.canvasSize.w > 0 && state.canvasSize.h > 0;
+          const centeredX = Math.max(0, (state.canvasSize.w - size.w) / 2);
+          const centeredY = Math.max(0, (state.canvasSize.h - size.h) / 2);
+          const origin = hasCanvas ? { x: centeredX, y: centeredY } : { x: 50, y: 50 };
           return {
             historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
             historyFuture: [],
@@ -132,8 +156,17 @@ export const useEditorStore = create<EditorState>()(
                 id,
                 type,
                 label: `${type} ${nextIndex}`,
-                layout: { x: 50, y: 50 },
-                initialLayout: { x: 50, y: 50 },
+                text: type === 'text' ? 'Animate Me' : undefined,
+                textStyle:
+                  type === 'text'
+                    ? {
+                        fontSize: 24,
+                        fontWeight: 600,
+                        lineHeight: 1.1,
+                      }
+                    : undefined,
+                layout: { ...origin },
+                initialLayout: { ...origin },
                 size,
                 initialSize: size,
                 animation: {
@@ -146,6 +179,7 @@ export const useEditorStore = create<EditorState>()(
                   delay: 0,
                   ease: 'power2.out',
                 },
+                presetKey: null,
               },
             ],
             selectedId: id,
@@ -203,6 +237,45 @@ export const useEditorStore = create<EditorState>()(
           historyFuture: [],
           elements: state.elements.map((el) =>
             el.id === id ? { ...el, animation: { ...el.animation, ...props } } : el,
+          ),
+        })),
+      updateElementPreset: (id, presetKey, preset) =>
+        set((state) => ({
+          historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
+          historyFuture: [],
+          elements: state.elements.map((el) =>
+            el.id === id ? { ...el, animation: { ...el.animation, ...preset }, presetKey } : el,
+          ),
+        })),
+      setElementPresetKey: (id, presetKey) =>
+        set((state) => ({
+          historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
+          historyFuture: [],
+          elements: state.elements.map((el) => (el.id === id ? { ...el, presetKey } : el)),
+        })),
+      updateElementText: (id, text) =>
+        set((state) => ({
+          historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
+          historyFuture: [],
+          elements: state.elements.map((el) => (el.id === id ? { ...el, text } : el)),
+        })),
+      updateElementTextStyle: (id, style) =>
+        set((state) => ({
+          historyPast: [...state.historyPast, createSnapshot(state)].slice(-MAX_HISTORY),
+          historyFuture: [],
+          elements: state.elements.map((el) =>
+            el.id === id
+              ? {
+                  ...el,
+                  textStyle: {
+                    fontSize: 24,
+                    fontWeight: 600,
+                    lineHeight: 1.1,
+                    ...el.textStyle,
+                    ...style,
+                  },
+                }
+              : el,
           ),
         })),
 
@@ -263,6 +336,13 @@ export const useEditorStore = create<EditorState>()(
       setCurrentTime: (time) => set({ currentTime: time }),
       setDuration: (duration) => set({ duration }),
       setStagger: (stagger) => set({ stagger }),
+      resetPreview: () =>
+        set((state) => ({
+          isPlaying: false,
+          currentTime: 0,
+          previewResetId: state.previewResetId + 1,
+        })),
+      setCanvasSize: (size) => set(() => ({ canvasSize: size })),
       toggleSnap: () => set((state) => ({ snapEnabled: !state.snapEnabled })),
 
       resetElements: () =>
@@ -442,10 +522,22 @@ export const useEditorStore = create<EditorState>()(
           const fallback = defaultSizeFor(el.type);
           const currentSize = el.size ?? fallback;
           const normalizedSize = currentSize.w < 80 || currentSize.h < 80 ? fallback : currentSize;
+          const textStyle =
+            el.type === 'text'
+              ? {
+                  fontSize: 24,
+                  fontWeight: 600,
+                  lineHeight: 1.1,
+                  ...el.textStyle,
+                }
+              : undefined;
           return {
             ...el,
             size: normalizedSize,
             initialSize: el.initialSize ?? normalizedSize,
+            text: el.type === 'text' ? (el.text ?? 'Animate Me') : el.text,
+            textStyle,
+            presetKey: el.presetKey ?? null,
           };
         });
         return state;

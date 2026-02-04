@@ -23,14 +23,22 @@ export function CodePreview() {
         let classes = 'absolute ';
         if (el.type === 'box') classes += 'w-20 h-20 bg-blue-500 rounded-lg';
         if (el.type === 'circle') classes += 'w-20 h-20 bg-rose-500 rounded-full';
-        if (el.type === 'text') classes += 'text-2xl font-bold text-zinc-800';
+        if (el.type === 'text') classes += 'text-zinc-800';
 
         // Inline styles for initial layout
         const width = el.size?.w ?? (el.type === 'text' ? 220 : 120);
         const height = el.size?.h ?? (el.type === 'text' ? 64 : 120);
-        const style = `{{ left: ${el.layout.x}, top: ${el.layout.y}, width: ${width}, height: ${height} }}`;
+        const fontSize = el.textStyle?.fontSize ?? 24;
+        const fontWeight = el.textStyle?.fontWeight ?? 600;
+        const lineHeight = el.textStyle?.lineHeight ?? 1.1;
+        const textStyles =
+          el.type === 'text'
+            ? `, fontSize: ${fontSize}, fontWeight: ${fontWeight}, lineHeight: ${lineHeight}, whiteSpace: 'pre-wrap'`
+            : '';
+        const style = `{{ left: ${el.layout.x}, top: ${el.layout.y}, width: ${width}, height: ${height}${textStyles} }}`;
 
-        return `      <div ref={${el.type}${el.id.slice(0, 4)}Ref} className="${classes}" style=${style}>\n        ${el.label}\n      </div>`;
+        const content = el.type === 'text' ? `{${JSON.stringify(el.text ?? 'Text')}}` : '';
+        return `      <div ref={${el.type}${el.id.slice(0, 4)}Ref} className="${classes}" style=${style}>\n        ${content}\n      </div>`;
       })
       .join('\n');
 

@@ -41,6 +41,14 @@ export function useCanvasKeyboard({
 }: UseCanvasKeyboardProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isFormField =
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.tagName === 'SELECT' ||
+        target?.isContentEditable;
+      if (isFormField) return;
+
       const isUndo = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z';
       const isRedo =
         (event.metaKey || event.ctrlKey) &&
@@ -96,14 +104,6 @@ export function useCanvasKeyboard({
       }
 
       if (isPlaying || selectedIds.length === 0) return;
-
-      const target = event.target as HTMLElement | null;
-      const isFormField =
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA' ||
-        target?.tagName === 'SELECT' ||
-        target?.isContentEditable;
-      if (isFormField) return;
 
       const snapping = snapEnabled && !event.altKey;
       const baseStep = snapping ? gridSize : 1;

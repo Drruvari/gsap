@@ -8,15 +8,23 @@ export const generateReactCode = (elements: SceneElement[]) => {
       let className = 'absolute ';
       if (el.type === 'box') className += 'w-20 h-20 bg-blue-500 rounded-lg';
       if (el.type === 'circle') className += 'w-20 h-20 bg-rose-500 rounded-full';
-      if (el.type === 'text') className += 'text-2xl font-bold';
+      if (el.type === 'text') className += 'text-zinc-800';
 
       // Note: We use the layout X/Y for initial CSS positioning
+      const fontSize = el.textStyle?.fontSize ?? 24;
+      const fontWeight = el.textStyle?.fontWeight ?? 600;
+      const lineHeight = el.textStyle?.lineHeight ?? 1.1;
+      const textStyles =
+        el.type === 'text'
+          ? `, fontSize: ${fontSize}, fontWeight: ${fontWeight}, lineHeight: ${lineHeight}, whiteSpace: 'pre-wrap'`
+          : '';
+      const content = el.type === 'text' ? `{${JSON.stringify(el.text ?? 'Text')}}` : '';
       return `      <div
         ref={(el) => refs.current['${el.id}'] = el}
         className="${className}"
-        style={{ left: ${el.layout.x}, top: ${el.layout.y}, width: ${el.size?.w ?? (el.type === 'text' ? 220 : 120)}, height: ${el.size?.h ?? (el.type === 'text' ? 64 : 120)} }}
+        style={{ left: ${el.layout.x}, top: ${el.layout.y}, width: ${el.size?.w ?? (el.type === 'text' ? 220 : 120)}, height: ${el.size?.h ?? (el.type === 'text' ? 64 : 120)}${textStyles} }}
       >
-        ${el.label}
+        ${content}
       </div>`;
     })
     .join('\n');

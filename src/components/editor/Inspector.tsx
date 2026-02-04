@@ -21,9 +21,14 @@ export function Inspector() {
     selectedId,
     selectedIds,
     updateElementAnimation,
+    updateElementLayout,
+    updateElementPreset,
+    setElementPresetKey,
+    updateElementTextStyle,
     deleteElement,
     alignSelected,
     distributeSelected,
+    canvasSize,
   } = useEditorStore();
   const easePreviewRef = useRef<string | null>(null);
 
@@ -139,10 +144,54 @@ export function Inspector() {
     );
   }
 
-  const { animation } = selectedElement;
+  const { animation, layout, size } = selectedElement;
+  const matchesPreset = (preset: Partial<typeof animation>) =>
+    Object.entries(preset).every(
+      ([key, value]) => animation[key as keyof typeof animation] === value,
+    );
+  const matchedPreset =
+    Object.entries(ANIMATION_PRESETS).find(([, preset]) => matchesPreset(preset))?.[0] ?? null;
+  const presetValue = matchedPreset ?? 'custom';
 
   const handleChange = (key: keyof typeof animation, value: string | number) => {
     updateElementAnimation(selectedElement.id, { [key]: Number(value) });
+    if (selectedElement.presetKey) {
+      setElementPresetKey(selectedElement.id, null);
+    }
+  };
+
+  const hasCanvas = canvasSize.w > 0 && canvasSize.h > 0;
+  const centerX = canvasSize.w / 2;
+  const centerY = canvasSize.h / 2;
+  const displayX = hasCanvas ? layout.x + size.w / 2 - centerX : layout.x;
+  const displayY = hasCanvas ? layout.y + size.h / 2 - centerY : layout.y;
+
+  const handleLayoutChange = (key: keyof typeof layout, value: string | number) => {
+    const next = Number(value);
+    if (!hasCanvas) {
+      updateElementLayout(
+        selectedElement.id,
+        { x: key === 'x' ? next : layout.x, y: key === 'y' ? next : layout.y },
+        true,
+      );
+      return;
+    }
+
+    if (key === 'x') {
+      const nextLayoutX = next + centerX - size.w / 2;
+      updateElementLayout(selectedElement.id, { x: nextLayoutX, y: layout.y }, true);
+      return;
+    }
+
+    const nextLayoutY = next + centerY - size.h / 2;
+    updateElementLayout(selectedElement.id, { x: layout.x, y: nextLayoutY }, true);
+  };
+
+  const handleTextStyleChange = (
+    key: keyof NonNullable<typeof selectedElement.textStyle>,
+    value: string | number,
+  ) => {
+    updateElementTextStyle(selectedElement.id, { [key]: Number(value) });
   };
 
   return (
@@ -166,15 +215,19 @@ export function Inspector() {
           <div className="space-y-1.5">
             <Label className="text-xs">Preset</Label>
             <Select
+              value={presetValue}
               onValueChange={(val) => {
+                if (val === 'custom') return;
+                if (!val) return;
                 const preset = ANIMATION_PRESETS[val as keyof typeof ANIMATION_PRESETS];
-                updateElementAnimation(selectedElement.id, preset);
+                updateElementPreset(selectedElement.id, val, preset);
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Choose a preset" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="custom">Custom</SelectItem>
                 {Object.keys(ANIMATION_PRESETS).map((name) => (
                   <SelectItem key={name} value={name}>
                     {name}
@@ -182,10 +235,48 @@ export function Inspector() {
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex items-center justify-end">
+              <Button
+                variant="outline"
+                size="xs"
+                disabled={!selectedElement.presetKey || !matchedPreset}
+                onClick={() => {
+                  if (!selectedElement.presetKey) return;
+                  const preset = ANIMATION_PRESETS[selectedElement.presetKey];
+                  if (!preset) return;
+                  updateElementPreset(selectedElement.id, selectedElement.presetKey, preset);
+                }}
+              >
+                Reset to preset
+              </Button>
+            </div>
           </div>
 
           <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Transform Target
+            Position
+          </h4>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Position X</Label>
+              <Input
+                type="number"
+                value={displayX}
+                onChange={(e) => handleLayoutChange('x', e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Position Y</Label>
+              <Input
+                type="number"
+                value={displayY}
+                onChange={(e) => handleLayoutChange('y', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Animation Offset
           </h4>
 
           <div className="grid grid-cols-2 gap-4">
@@ -315,6 +406,60 @@ export function Inspector() {
             </Select>
           </div>
         </div>
+
+        {selectedElement.type === 'text' && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Text
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Font Size</Label>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="10"
+                    value={selectedElement.textStyle?.fontSize ?? 24}
+                    onChange={(e) => handleTextStyleChange('fontSize', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Weight</Label>
+                  <Select
+                    value={String(selectedElement.textStyle?.fontWeight ?? 600)}
+                    onValueChange={(val) => {
+                      if (!val) return;
+                      handleTextStyleChange('fontWeight', val);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['300', '400', '500', '600', '700', '800'].map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Line Height</Label>
+                <Input
+                  type="number"
+                  step="0.05"
+                  min="0.8"
+                  value={selectedElement.textStyle?.lineHeight ?? 1.1}
+                  onChange={(e) => handleTextStyleChange('lineHeight', e.target.value)}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
