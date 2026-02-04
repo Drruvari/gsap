@@ -101,11 +101,7 @@ export function useCanvasResize({
         { x: applySnap(nextX, snapping), y: applySnap(nextY, snapping) },
         true,
       );
-      updateElementSize(
-        id,
-        { w: applySnap(nextW, snapping), h: applySnap(nextH, snapping) },
-        true,
-      );
+      updateElementSize(id, { w: applySnap(nextW, snapping), h: applySnap(nextH, snapping) }, true);
       resizeRef.current = null;
     };
 

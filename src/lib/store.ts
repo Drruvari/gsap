@@ -236,7 +236,7 @@ export const useEditorStore = create<EditorState>()(
         }),
 
       clearSelection: () =>
-        set((state) => ({
+        set(() => ({
           selectedId: null,
           selectedIds: [],
         })),
@@ -310,7 +310,7 @@ export const useEditorStore = create<EditorState>()(
           };
         }),
       setSelection: (ids) =>
-        set((state) => ({
+        set(() => ({
           selectedIds: ids,
           selectedId: ids.length ? ids[ids.length - 1] : null,
         })),

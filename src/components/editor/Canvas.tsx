@@ -89,12 +89,8 @@ export function Canvas() {
 
   const selectionBounds = useMemo(() => {
     if (selectedElements.length < 2) return null;
-    const minX = Math.min(
-      ...selectedElements.map((el) => el.layout.x),
-    );
-    const minY = Math.min(
-      ...selectedElements.map((el) => el.layout.y),
-    );
+    const minX = Math.min(...selectedElements.map((el) => el.layout.x));
+    const minY = Math.min(...selectedElements.map((el) => el.layout.y));
     const maxX = Math.max(
       ...selectedElements.map((el) => el.layout.x + (sizeMap.get(el.id)?.w ?? getSize(el).w)),
     );
