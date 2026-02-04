@@ -40,6 +40,7 @@ interface EditorState {
   selectedId: string | null;
   selectedIds: string[];
   isPlaying: boolean;
+  loopEnabled: boolean;
   currentTime: number;
   duration: number;
   stagger: number;
@@ -67,6 +68,7 @@ interface EditorState {
   clearSelection: () => void;
   deleteElement: (id: string) => void;
   setIsPlaying: (playing: boolean) => void;
+  setLoopEnabled: (enabled: boolean) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
   setStagger: (stagger: number) => void;
@@ -128,6 +130,7 @@ export const useEditorStore = create<EditorState>()(
       selectedId: null,
       selectedIds: [],
       isPlaying: false,
+      loopEnabled: false,
       currentTime: 0,
       duration: 0,
       stagger: 0,
@@ -333,6 +336,7 @@ export const useEditorStore = create<EditorState>()(
         }),
 
       setIsPlaying: (playing) => set({ isPlaying: playing }),
+      setLoopEnabled: (enabled) => set({ loopEnabled: enabled }),
       setCurrentTime: (time) => set({ currentTime: time }),
       setDuration: (duration) => set({ duration }),
       setStagger: (stagger) => set({ stagger }),

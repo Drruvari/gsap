@@ -5,6 +5,7 @@ import { useEditorStore } from '@/lib/store';
 export function usePlayback() {
   const {
     isPlaying,
+    loopEnabled,
     elements,
     currentTime,
     stagger,
@@ -40,7 +41,11 @@ export function usePlayback() {
     const tl = gsap.timeline({
       paused: true,
       onUpdate: () => setCurrentTime(tl.time()),
-      onComplete: () => setIsPlaying(false),
+      onComplete: () => {
+        if (!loopEnabled) {
+          setIsPlaying(false);
+        }
+      },
     });
 
     elements.forEach((el, index) => {
@@ -66,11 +71,17 @@ export function usePlayback() {
     setDuration(tl.duration());
     tl.time(currentTimeRef.current, false);
 
+    if (loopEnabled) {
+      tl.repeat(-1);
+    } else {
+      tl.repeat(0);
+    }
+
     if (isPlayingRef.current) {
       tl.play();
       wasPlayingRef.current = true;
     }
-  }, [elements, stagger, setCurrentTime, setDuration, setIsPlaying]);
+  }, [elements, loopEnabled, stagger, setCurrentTime, setDuration, setIsPlaying]);
 
   useEffect(() => {
     const tl = timelineRef.current;
@@ -83,8 +94,8 @@ export function usePlayback() {
       return;
     }
 
-    // Only reset when transitioning from playing -> stopped
-    if (wasPlayingRef.current) {
+    // Only reset when transitioning from playing -> stopped (and not looping)
+    if (wasPlayingRef.current && !loopEnabled) {
       tl.pause(0);
       setCurrentTime(0);
       elements.forEach((el) => {
@@ -98,7 +109,7 @@ export function usePlayback() {
     }
 
     wasPlayingRef.current = false;
-  }, [isPlaying, currentTime, elements, setCurrentTime]);
+  }, [isPlaying, currentTime, elements, loopEnabled, setCurrentTime]);
 
   useEffect(() => {
     const tl = timelineRef.current;

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useEditorStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,9 @@ import { PlayIcon, StopIcon, SquareIcon, CircleIcon, TextIcon } from '@hugeicons
 export function Timeline() {
   const {
     isPlaying,
+    loopEnabled,
     setIsPlaying,
+    setLoopEnabled,
     addElement,
     resetPreview,
     currentTime,
@@ -22,12 +25,27 @@ export function Timeline() {
     redo,
     historyPast,
     historyFuture,
+    elements,
+    setElementPresetKey,
+    updateElementAnimation,
   } = useEditorStore();
 
+  const itemOffsets = useMemo(
+    () =>
+      elements
+        .map((el) => ({
+          id: el.id,
+          label: el.label,
+          delay: el.animation.delay,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [elements],
+  );
+
   return (
-    <div className="h-16 flex items-center px-3 sm:px-4 justify-between gap-3">
-      {/* Playback Controls */}
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-2 px-3 sm:px-4 py-2">
+      {/* Playback + Playhead */}
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -54,6 +72,13 @@ export function Timeline() {
           <HugeiconsIcon icon={isPlaying ? StopIcon : PlayIcon} fill="currentColor" />
         </Button>
         <Button
+          variant={loopEnabled ? 'secondary' : 'outline'}
+          size="sm"
+          onClick={() => setLoopEnabled(!loopEnabled)}
+        >
+          Loop
+        </Button>
+        <Button
           variant="outline"
           size="sm"
           onClick={() => {
@@ -62,13 +87,6 @@ export function Timeline() {
         >
           Reset
         </Button>
-        <div className="text-xs text-muted-foreground ml-2">
-          {isPlaying ? 'Previewing...' : 'Ready'}
-        </div>
-      </div>
-
-      {/* Playhead */}
-      <div className="flex items-center gap-3 min-w-[360px]">
         <input
           type="range"
           min={0}
@@ -79,10 +97,10 @@ export function Timeline() {
             setIsPlaying(false);
             setCurrentTime(Number(e.target.value));
           }}
-          className="w-56 h-3 appearance-none rounded-full bg-muted/60 shadow-inner accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-primary/70 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-primary/70 [&::-moz-range-thumb]:shadow-md"
+          className="w-[180px] sm:w-[220px] md:w-[260px] h-3 appearance-none rounded-full bg-muted/60 shadow-inner accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-primary/70 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-primary/70 [&::-moz-range-thumb]:shadow-md"
           disabled={!duration}
         />
-        <div className="text-xs text-muted-foreground tabular-nums min-w-[72px] text-right">
+        <div className="text-xs text-muted-foreground tabular-nums min-w-[84px] text-right">
           {currentTime.toFixed(2)}s / {duration.toFixed(2)}s
         </div>
         <div className="flex items-center gap-2">
@@ -96,10 +114,13 @@ export function Timeline() {
             className="h-8 w-20 text-xs"
           />
         </div>
+        <div className="text-xs text-muted-foreground ml-auto">
+          {isPlaying ? 'Previewing...' : 'Ready'}
+        </div>
       </div>
 
       {/* Add Elements */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant={snapEnabled ? 'secondary' : 'outline'}
           size="sm"
@@ -122,6 +143,34 @@ export function Timeline() {
           Text
         </Button>
       </div>
+
+      {/* Per-element Offsets */}
+      {itemOffsets.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider shrink-0">
+            Offsets
+          </div>
+          {itemOffsets.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-2 py-1 shrink-0"
+            >
+              <span className="text-[11px] text-foreground/70">{item.label}</span>
+              <Input
+                type="number"
+                step="0.05"
+                min="0"
+                value={item.delay}
+                onChange={(e) => {
+                  updateElementAnimation(item.id, { delay: Number(e.target.value) });
+                  setElementPresetKey(item.id, null);
+                }}
+                className="h-7 w-20 text-[11px]"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
