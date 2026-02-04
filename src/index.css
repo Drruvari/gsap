@@ -45,13 +45,13 @@
   --glass-border: var(--border);
   --glass-highlight: oklch(1 0 0 / 0.08);
   --glass-input-bg: var(--input);
-  --glass-blur: 0px;
-  --glass-saturate: 1;
+  --glass-blur: 26px;
+  --glass-saturate: 1.35;
   --glass-shadow: 0 12px 30px -24px oklch(0.12 0.02 265 / 0.4);
   --glass-shadow-strong: 0 14px 34px -24px oklch(0.12 0.02 265 / 0.45);
   --glass-shadow-deep: 0 14px 34px -24px oklch(0.08 0.02 265 / 0.6);
   --glass-popover-shadow: 0 12px 30px -24px oklch(0.12 0.02 265 / 0.4);
-  --backdrop-tint: transparent;
+  --backdrop-tint: oklch(1 0 0 / 0.08);
 }
 
 .dark {
@@ -92,13 +92,13 @@
   --glass-border: var(--border);
   --glass-highlight: oklch(1 0 0 / 0.08);
   --glass-input-bg: var(--input);
-  --glass-blur: 0px;
-  --glass-saturate: 1;
+  --glass-blur: 26px;
+  --glass-saturate: 1.25;
   --glass-shadow: 0 14px 34px -24px oklch(0 0 0 / 0.55);
   --glass-shadow-strong: 0 16px 38px -24px oklch(0 0 0 / 0.6);
   --glass-shadow-deep: 0 16px 38px -24px oklch(0 0 0 / 0.7);
   --glass-popover-shadow: 0 14px 34px -24px oklch(0 0 0 / 0.55);
-  --backdrop-tint: transparent;
+  --backdrop-tint: oklch(0 0 0 / 0.2);
 }
 
 .glass-light {
